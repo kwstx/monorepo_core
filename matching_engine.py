@@ -8,19 +8,28 @@ from cooperative_intelligence import CooperativeIntelligenceVector
 class MatchingEngine:
     """
     Evaluates the structural complementarity between agents and tasks.
-    
+
     The engine prioritizes agents who maintain stable collaboration dynamics
     and possess high-fidelity impact projections, rather than those with high
     individual output but unstable synergetic signatures.
     """
 
     @staticmethod
+    def _clamp01(value: float) -> float:
+        return max(0.0, min(1.0, value))
+
+    @classmethod
     def score_agent_alignment(
+        cls,
         task: CooperativeContextTensor,
         agent: CooperativeIntelligenceVector
     ) -> float:
         """
         Computes a composite alignment score based on synergy projection.
+
+        TemporalImpactMemory contributes increasingly on tasks with deeper
+        downstream causal depth and longer horizons so delayed-impact agents
+        are not systematically excluded.
         """
         # 1. Base Capability Alignment (Technical Fit)
         capability_fit = CooperativeContextModel.compute_alignment_score(
@@ -29,34 +38,40 @@ class MatchingEngine:
 
         # 2. Predictive Calibration Multiplier
         # Tasks with low uncertainty tolerance require high calibration.
-        # calibration_gap measures the deficit if agent reliability is lower than task requirements.
-        calibration_weight = 1.0 - task.uncertainty_tolerance  # Higher if task is sensitive
+        calibration_weight = 1.0 - task.uncertainty_tolerance
         calibration_score = agent.predictive_calibration_reliability
-        
+
         # 3. Marginal Influence Consistency
         # High causal depth implies the agent's influence propagates through many layers.
-        # This requires consistent marginal utility.
         causal_multiplier = 1.0 + (task.expected_downstream_causal_depth * 0.1)
         consistency_effect = agent.marginal_cooperative_influence_consistency * causal_multiplier
 
         # 4. Cross-Role Integration Depth
-        # Tasks with diverse capability requirements benefit from high integration depth.
         capability_breadth = len(task.required_capability_vectors)
-        integration_bonus = (
-            agent.cross_role_integration_depth * (capability_breadth * 0.05)
+        integration_bonus = agent.cross_role_integration_depth * (capability_breadth * 0.05)
+
+        # 5. Temporal Impact Memory
+        depth_factor = cls._clamp01(task.expected_downstream_causal_depth / 8.0)
+        horizon_factor = cls._clamp01(task.temporal_horizon / 12.0)
+        deep_chain_factor = (0.6 * depth_factor) + (0.4 * horizon_factor)
+        temporal_memory_score = agent.temporal_impact_memory.score_for_task(task)
+
+        # Dynamic weights: deep-chain tasks shift signal away from short-term capability
+        # and toward delayed causal contribution quality.
+        capability_weight = 0.40 - (0.12 * deep_chain_factor)
+        temporal_weight = 0.02 + (0.16 * deep_chain_factor)
+
+        composite_score = (
+            (capability_fit * capability_weight)
+            + (calibration_score * calibration_weight * 0.30)
+            + (consistency_effect * 0.20)
+            + (integration_bonus * 0.10)
+            + (temporal_memory_score * temporal_weight)
         )
 
-        # Composite Scoring:
-        # We start with capability fit but moderate it through the intelligence vectors.
-        # An agent with a perfect skill match but zero consistency will be de-prioritized
-        # for high-depth or low-tolerance tasks.
-        
-        composite_score = (
-            (capability_fit * 0.4) +
-            (calibration_score * calibration_weight * 0.3) +
-            (consistency_effect * 0.2) +
-            (integration_bonus * 0.1)
-        )
+        # Fairness floor for delayed-impact contributors on deep-chain tasks.
+        delayed_floor = temporal_memory_score * deep_chain_factor * 0.08
+        composite_score += delayed_floor
 
         return round(max(0.0, composite_score), 6)
 
@@ -73,6 +88,6 @@ class MatchingEngine:
         for agent in agents:
             score = self.score_agent_alignment(task, agent)
             scored_agents.append((agent.agent_id, score))
-        
+
         # Sort by score descending
         return sorted(scored_agents, key=lambda x: x[1], reverse=True)

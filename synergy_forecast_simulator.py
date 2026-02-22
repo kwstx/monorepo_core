@@ -90,6 +90,7 @@ class SynergyForecastSimulator:
 
         coalition = tuple(sorted(candidate_agents))
         profile_map = self._index_profiles(counterfactual_profiles)
+        self._ensure_all_profiles_present(coalition, profile_map)
         trust_weights, trust_entropy = self._trust_adjusted_weights(coalition, profile_map)
         additive_mean, additive_sigma, team_reliability = self._coalition_additive_parameters(
             coalition,
@@ -140,6 +141,15 @@ class SynergyForecastSimulator:
         if len(profile_map) != len(profiles):
             raise ValueError("counterfactual_profiles contains duplicate agent_id entries")
         return profile_map
+
+    def _ensure_all_profiles_present(
+        self,
+        coalition: Sequence[str],
+        profile_map: Mapping[str, AgentCounterfactualProfile],
+    ) -> None:
+        for agent in coalition:
+            if agent not in profile_map:
+                raise ValueError(f"missing counterfactual profile for agent '{agent}'")
 
     def _coalition_additive_parameters(
         self,

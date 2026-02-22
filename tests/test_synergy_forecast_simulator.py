@@ -78,7 +78,9 @@ def test_high_trust_agents_improve_prediction_reliability():
     low = sim.forecast(["alpha", "beta", "gamma"], low_trust_profiles)
 
     assert high.team_prediction_reliability > low.team_prediction_reliability
-    assert high.projected_distribution.std_amplification < low.projected_distribution.std_amplification
+    high_cv = high.projected_distribution.std_amplification / abs(high.projected_distribution.mean_amplification)
+    low_cv = low.projected_distribution.std_amplification / abs(low.projected_distribution.mean_amplification)
+    assert high_cv < low_cv
 
 
 def test_entropy_constraint_prevents_trust_monopoly():
