@@ -1,0 +1,25 @@
+﻿--- Organizational Graph Analysis ---
+
+Reporting Chain for Developer:
+user_lead -> user_cto
+
+Department Lineage for Developer:
+dept_engineering -> dept_corp
+
+Authority Check (Developer - Write Repo):
+έεΖ AUTHORIZED
+
+Authority Check (Developer - Purge Database):
+έζΝ DENIED
+
+Delegation Validation: Can CTO delegate Admin to Developer?
+έεΖ VALID
+
+Delegation Validation: Can Developer delegate Admin to CTO?
+έζΝ INVALID
+
+Authority Check (Developer - Execute Server Maintenance) after delegation:
+έεΖ AUTHORIZED
+
+Required Approvers for Developer (Eng) acting on Finance Resource:
+[]
