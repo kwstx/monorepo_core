@@ -322,7 +322,7 @@ export class ApprovalRoutingEngine {
 
         for (const domain of definition.domains) {
             const configured = this.getDomainApprovers(domain, action, crossDeptApprovers);
-            for (const approverId of configured.approverIds) {
+            for (const approverId of configured.approverIds ?? []) {
                 approverSet.add(approverId);
             }
             if (configured.decisionPolicy === 'all') {
@@ -351,8 +351,10 @@ export class ApprovalRoutingEngine {
         if (domain === 'managerial') {
             const managerApprover = this.orgGraph.getReportingChain(action.agentId)[0];
             const configured = this.domainApprovers.managerial ?? {};
+            const configuredApprovers = configured.approverIds ?? [];
+            const managerApprovers = managerApprover ? [managerApprover] : [];
             return {
-                approverIds: this.unique([...configured.approverIds ?? [], ...managerApprover ? [managerApprover] : []]),
+                approverIds: this.unique([...configuredApprovers, ...managerApprovers]),
                 decisionPolicy: configured.decisionPolicy ?? 'any'
             };
         }
@@ -505,4 +507,3 @@ export class ApprovalRoutingEngine {
         return [...new Set(items)];
     }
 }
-
