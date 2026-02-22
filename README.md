@@ -58,6 +58,28 @@ new_policy = repo.clone_template(
 )
 ```
 
+### Template Extensibility & Validation
+
+The `TemplateExtensibilityModule` allows for advanced template management, including legal validation and live integration.
+
+```python
+from src.extensibility import TemplateExtensibilityModule
+from src.repository import PolicyRepository
+from src.live_update import LiveUpdateEngine
+
+repo = PolicyRepository()
+engine = LiveUpdateEngine()
+extensibility = TemplateExtensibilityModule(repo, engine)
+
+# 1. Create a new template with validation
+# extensibility.create_template(my_new_template)
+
+# 2. Customize a template and automatically update live engine
+# extensibility.customize_template("BASE-TMPL", "NEW-POL", {"industry": "Web3"})
+```
+
+The module ensures that all new templates and customized policies meet internal standards and are immediately propagated to active workflows through the `LiveUpdateEngine`.
+
 ## Requirements
 
 - Python 3.10+
