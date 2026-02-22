@@ -104,3 +104,17 @@ def test_adoption_tracking_and_analytics(vc_engine):
     compliance = vc_engine.list_agent_policy_compliance("agent-1")
     assert len(compliance) == 1
     assert compliance[0]["version"] == "1.1.0"
+
+def test_compliance_impact_comparison(vc_engine):
+    # Track adoptions for two versions
+    vc_engine.track_adoption("a1", "POL-X", "1.0", compliance_score={"overall": 0.7})
+    vc_engine.track_adoption("a2", "POL-X", "1.0", compliance_score={"overall": 0.8})
+    
+    vc_engine.track_adoption("a1", "POL-X", "2.0", compliance_score={"overall": 0.9})
+    vc_engine.track_adoption("a2", "POL-X", "2.0", compliance_score={"overall": 1.0})
+
+    comparison = vc_engine.compare_compliance_impact("POL-X", "1.0", "2.0")
+    assert comparison["old_compliance"] == 0.75
+    assert comparison["new_compliance"] == 0.95
+    assert comparison["compliance_delta"] == pytest.approx(0.2)
+    assert comparison["impact_direction"] == "improved"

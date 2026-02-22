@@ -51,6 +51,28 @@ class VersionControlEngine:
         finally:
             session.close()
 
+    def record_test_results(self, deployment_id: str, results: Dict[str, Any]):
+        """
+        Records the results of safety and compliance tests for a staging deployment.
+        Moves status to TESTING.
+        """
+        session = self.SessionLocal()
+        try:
+            record = session.query(DeploymentRecord).filter(DeploymentRecord.id == deployment_id).first()
+            if not record:
+                raise ValueError(f"Deployment {deployment_id} not found")
+            
+            # Combine existing metadata with test results
+            current_meta = record.metadata_json or {}
+            current_meta["test_results"] = results
+            current_meta["tested_at"] = datetime.utcnow().isoformat()
+            
+            record.metadata_json = current_meta
+            record.status = DeploymentStatus.TESTING
+            session.commit()
+        finally:
+            session.close()
+
     def promote_to_production(self, deployment_id: str):
         """
         Marks a tested staging deployment as PRODUCTION.
@@ -214,6 +236,40 @@ class VersionControlEngine:
         finally:
             session.close()
 
+    def compare_compliance_impact(self, policy_id: str, old_version: str, new_version: str) -> Dict[str, Any]:
+        """
+        Compares the compliance impact between two versions of the same policy.
+        Helps identify if a new update improved or degraded agent alignment.
+        """
+        session = self.SessionLocal()
+        try:
+            # We need to look at historical records, not just active ones for the old version
+            # because the old version might be mostly SUPERSEDED now.
+            def get_avg_score(v):
+                recs = session.query(AdoptionRecord).filter(
+                    AdoptionRecord.policy_id == policy_id,
+                    AdoptionRecord.version == v
+                ).all()
+                scores = [r.compliance_score.get("overall", 0) for r in recs if r.compliance_score]
+                return sum(scores) / len(scores) if scores else 0.0
+
+            old_score = get_avg_score(old_version)
+            new_score = get_avg_score(new_version)
+            
+            delta = new_score - old_score
+            
+            return {
+                "policy_id": policy_id,
+                "old_version": old_version,
+                "new_version": new_version,
+                "old_compliance": old_score,
+                "new_compliance": new_score,
+                "compliance_delta": delta,
+                "impact_direction": "improved" if delta > 0.001 else "degraded" if delta < -0.001 else "stable"
+            }
+        finally:
+            session.close()
+
     def list_agent_policy_compliance(self, agent_id: str) -> List[Dict[str, Any]]:
         """Lists all policies currently active for a specific agent and their compliance states."""
         session = self.SessionLocal()
@@ -232,5 +288,27 @@ class VersionControlEngine:
                 }
                 for r in records
             ]
+        finally:
+            session.close()
+
+    def get_deployment_status(self, policy_id: str, environment: str = "production") -> Optional[Dict[str, Any]]:
+        """Returns the currently active deployment for a policy."""
+        session = self.SessionLocal()
+        try:
+            record = session.query(DeploymentRecord).filter(
+                DeploymentRecord.policy_id == policy_id,
+                DeploymentRecord.status == DeploymentStatus.PRODUCTION,
+                DeploymentRecord.environment == environment
+            ).first()
+            
+            if not record:
+                return None
+            
+            return {
+                "deployment_id": record.id,
+                "version": record.version,
+                "deployed_at": record.deployed_at.isoformat() if record.deployed_at else None,
+                "environment": record.environment
+            }
         finally:
             session.close()
