@@ -205,6 +205,6 @@ class SynergyForecastSimulator:
             p50=quantile(0.50),
             p95=quantile(0.95),
             probability_positive_amplification=max(0.0, min(1.0, pos_prob)),
-            expected_combined_impact=mean(combined_samples),
+            expected_combined_impact=additive_expectation + amp_mean,
             expected_additive_impact=additive_expectation,
         )
