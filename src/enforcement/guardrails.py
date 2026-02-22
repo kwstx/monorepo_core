@@ -218,3 +218,8 @@ class AdaptiveGuardrailsEngine:
             applied_policies=[result.policy_id],
             suggested_correction={"review_required": True}
         )
+
+    def list_active_policies(self) -> List[StructuredPolicy]:
+        """Returns a thread-safe snapshot of policies currently tracked by guardrails."""
+        with self._lock:
+            return list(self._enforcer.policies)

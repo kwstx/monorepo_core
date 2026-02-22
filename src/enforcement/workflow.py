@@ -67,6 +67,11 @@ class PolicyInjectedWorkflow:
                 
             return result
 
+    def list_active_policies(self) -> List[StructuredPolicy]:
+        """Returns a thread-safe snapshot of policies currently enforced by this workflow."""
+        with self._lock:
+            return list(self._enforcer.policies)
+
 def create_enforced_agent(workflow_id: str, context: Dict[str, Any] = None):
     """Factory helper to create a policy-aware agent workflow."""
     
