@@ -15,8 +15,10 @@ The `PolicySchemaTranslator` bridge the gap between human-written regulations an
 
 - `src/models/policy_schema.py`: Pydantic models for the structured policy.
 - `src/repository/policy_repository.py`: Versioned, queryable storage for policies and templates.
+- `src/api/main.py`: PolicyAPI implementation for external systems and agents.
 - `src/translator/core.py`: Main translator class and serialization logic.
 - `src/translator/prompt_templates.py`: Instructions for LLMs to perform the translation.
+- `tests/test_policy_api.py`: Verification tests for the PolicyAPI.
 - `tests/test_translation.py`: Example usage and verification flow.
 - `tests/test_repository.py`: Tests for the storage and versioning layer.
 
