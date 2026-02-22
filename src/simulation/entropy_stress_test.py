@@ -72,7 +72,10 @@ class EntropyStressTest:
         final = trajectory[-1]
 
         dominance_score = self._dominance_amplification_score(trajectory)
-        fragmentation_score = self._fragmentation_risk_score(trajectory)
+        fragmentation_score = self._fragmentation_risk_score(
+            trajectory,
+            policy_fragmentation_pressure=fragmentation_pressure,
+        )
 
         dominance_detected = dominance_score >= 0.08 and final.dominance_share >= 0.34
         fragmentation_detected = fragmentation_score >= 0.12
@@ -255,7 +258,10 @@ class EntropyStressTest:
         return max(0.0, score)
 
     @staticmethod
-    def _fragmentation_risk_score(trajectory: Sequence[EntropyCycleMetrics]) -> float:
+    def _fragmentation_risk_score(
+        trajectory: Sequence[EntropyCycleMetrics],
+        policy_fragmentation_pressure: float,
+    ) -> float:
         if len(trajectory) <= 1:
             return 0.0
 
@@ -271,14 +277,18 @@ class EntropyStressTest:
             else 0.0
         )
         average_churn = mean(point.churn for point in trajectory[1:])
+        max_churn = max(point.churn for point in trajectory[1:])
 
         baseline = trajectory[0]
         final = trajectory[-1]
         instability_drag = max(0.0, baseline.normalized_entropy - final.normalized_entropy)
 
         score = (
-            0.5 * entropy_volatility
-            + 0.35 * average_churn
+            0.35 * entropy_volatility
+            + 0.25 * mean_delta
+            + 0.25 * average_churn
+            + 0.10 * max_churn
             + 0.15 * instability_drag
+            + 0.10 * max(0.0, policy_fragmentation_pressure)
         )
         return max(0.0, score)
