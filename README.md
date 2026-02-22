@@ -14,11 +14,15 @@ The `PolicySchemaTranslator` bridge the gap between human-written regulations an
 ## Project Structure
 
 - `src/models/policy_schema.py`: Pydantic models for the structured policy.
+- `src/repository/policy_repository.py`: Versioned, queryable storage for policies and templates.
 - `src/translator/core.py`: Main translator class and serialization logic.
 - `src/translator/prompt_templates.py`: Instructions for LLMs to perform the translation.
 - `tests/test_translation.py`: Example usage and verification flow.
+- `tests/test_repository.py`: Tests for the storage and versioning layer.
 
 ## Usage
+
+### Translation
 
 ```python
 from src.translator import PolicySchemaTranslator
@@ -26,17 +30,36 @@ from src.models import PolicyDomain, PolicyScope
 
 translator = PolicySchemaTranslator()
 
-# 1. Translate NL to Structured Object (LLM Required for NL processing)
+# 1. Translate NL to Structured Object
 # structured_policy = translator.translate("Your natural language policy here")
 
 # 2. Export to JSON for Agent consumption
 # json_payload = translator.export_as_json(structured_policy)
+```
 
-# 3. Agents load the policy
-# policy = PolicySchemaTranslator.from_json(json_payload)
+### Repository & Templates
+
+```python
+from src.repository import PolicyRepository
+
+repo = PolicyRepository("sqlite:///my_policies.db")
+
+# Save a policy
+repo.save_policy(structured_policy)
+
+# Browse templates by industry
+templates = repo.list_policies(industry="Healthcare", is_template=True)
+
+# Clone and adapt a template
+new_policy = repo.clone_template(
+    template_id="BASE-AUTH",
+    new_policy_id="CLIENT-X-AUTH",
+    updates={"industry": "Finance", "functional_area": "Account Management"}
+)
 ```
 
 ## Requirements
 
 - Python 3.10+
 - `pydantic>=2.0.0`
+- `sqlalchemy`

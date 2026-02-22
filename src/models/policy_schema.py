@@ -58,6 +58,16 @@ class StructuredPolicy(BaseModel):
     version: str = Field("1.0.0")
     domain: PolicyDomain
     scope: PolicyScope
+    
+    # New indexing fields
+    industry: Optional[str] = Field(None, description="Industry sector (e.g., healthcare, finance).")
+    compliance_type: Optional[str] = Field(None, description="Compliance framework (e.g., GDPR, SOC2).")
+    functional_area: Optional[str] = Field(None, description="Functional area within the organization.")
+    
+    # Template support
+    is_template: bool = Field(False, description="Whether this policy is a generic template.")
+    template_id: Optional[str] = Field(None, description="Reference to the template this policy was cloned from.")
+    
     effective_date: datetime = Field(default_factory=datetime.utcnow)
     
     # Core Logic
