@@ -1,5 +1,6 @@
 import copy
 import logging
+from typing import Any, Dict, List, Union, Optional
 from pydantic import BaseModel, Field
 from src.models.policy import PolicySchema, TransformationOperator, InfluenceTransformation, ExecutableConstraint
 from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
@@ -17,6 +18,8 @@ class SimulationResult(BaseModel):
     projected_impact_modifiers: Dict[str, float]
     violations: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+logger = logging.getLogger(__name__)
 
 class PolicyInjectionSimulator:
     """
