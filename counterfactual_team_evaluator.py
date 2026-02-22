@@ -21,6 +21,9 @@ class TeamImpactProjection:
     synergy_density: float
     probability_positive_impact: float
     uncertainty: float
+    team_prediction_reliability: float = 0.0
+    trust_weight_max_share: float = 1.0
+    trust_weight_entropy: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -106,7 +109,10 @@ class CounterfactualTeamEvaluator:
             marginal_synergy_amplification=dist.mean_amplification,
             synergy_density=forecast.historical_synergy_density,
             probability_positive_impact=dist.probability_positive_amplification,
-            uncertainty=dist.std_amplification
+            uncertainty=dist.std_amplification,
+            team_prediction_reliability=forecast.team_prediction_reliability,
+            trust_weight_max_share=forecast.trust_weight_max_share,
+            trust_weight_entropy=forecast.trust_weight_entropy
         )
 
     def calculate_delta_impact(
