@@ -1,6 +1,6 @@
 import math
 
-from src.causal_impact_propagation import CausalImpactPropagationEngine
+from src.causal_impact_propagation import CausalImpactPropagationEngine, SynergyShiftAnalyzer
 from src.models.cooperative_state_snapshot import (
     CooperativeIntelligenceDistribution,
     CooperativeStateSnapshot,
@@ -99,3 +99,36 @@ def test_transient_policy_stops_after_duration():
     h5 = next(p for p in report.horizons if p.horizon == 5)
     assert math.isclose(h5.projected_outcome_score, baseline, rel_tol=1e-9, abs_tol=1e-9)
     assert math.isclose(h5.impact_delta_vs_baseline, 0.0, rel_tol=1e-9, abs_tol=1e-9)
+
+
+def test_synergy_shift_analyzer_outputs_tensor_deltas():
+    analyzer = SynergyShiftAnalyzer()
+    report = analyzer.analyze(_policy(), _baseline_snapshot(), horizons=[1, 5])
+
+    assert report.policy_id == "policy-1"
+    assert tuple(h.horizon for h in report.horizons) == (1, 5)
+
+    for horizon in report.horizons:
+        assert len(horizon.projected_synergy_distribution_delta_tensors) == 1
+        assert len(horizon.complementarity_emergence_probability_delta_tensors) == 1
+        assert len(horizon.marginal_cooperative_influence_variability_delta_tensors) == 1
+
+        distribution_tensor = horizon.projected_synergy_distribution_delta_tensors[0]
+        assert len(distribution_tensor.delta_values) == 2
+        assert len(distribution_tensor.delta_values[0]) == 2
+
+        projected_sum = sum(sum(row) for row in distribution_tensor.projected_values)
+        baseline_sum = sum(sum(row) for row in distribution_tensor.baseline_values)
+        assert math.isclose(projected_sum, 1.0, rel_tol=1e-9, abs_tol=1e-9)
+        assert math.isclose(baseline_sum, 1.0, rel_tol=1e-9, abs_tol=1e-9)
+
+        complementarity_tensor = horizon.complementarity_emergence_probability_delta_tensors[0]
+        assert all(
+            0.0 <= value <= 1.0
+            for row in complementarity_tensor.projected_values
+            for value in row
+        )
+
+        variability_tensor = horizon.marginal_cooperative_influence_variability_delta_tensors[0]
+        assert len(variability_tensor.delta_values) == 2
+        assert len(variability_tensor.delta_values[0]) == 2

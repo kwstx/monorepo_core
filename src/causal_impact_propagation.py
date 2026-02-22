@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from statistics import mean
-from typing import Iterable, List, Sequence
+from typing import Iterable, List, Sequence, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -30,6 +30,28 @@ class ImpactPropagationReport(BaseModel):
     policy_id: str
     baseline: BaselineSignals
     horizons: tuple[HorizonImpactProjection, ...]
+
+
+class SynergyTensorDelta(BaseModel):
+    matrix_id: str
+    row_labels: tuple[str, ...]
+    col_labels: tuple[str, ...]
+    baseline_values: tuple[tuple[float, ...], ...]
+    projected_values: tuple[tuple[float, ...], ...]
+    delta_values: tuple[tuple[float, ...], ...]
+
+
+class SynergyShiftHorizonProjection(BaseModel):
+    horizon: int = Field(..., ge=1)
+    policy_effect: float
+    projected_synergy_distribution_delta_tensors: tuple[SynergyTensorDelta, ...]
+    complementarity_emergence_probability_delta_tensors: tuple[SynergyTensorDelta, ...]
+    marginal_cooperative_influence_variability_delta_tensors: tuple[SynergyTensorDelta, ...]
+
+
+class SynergyShiftReport(BaseModel):
+    policy_id: str
+    horizons: tuple[SynergyShiftHorizonProjection, ...]
 
 
 class CausalImpactPropagationEngine:
@@ -211,3 +233,231 @@ class CausalImpactPropagationEngine:
             return 0.5
 
         return max(0.0, min(1.0, 1.0 - mean(errors)))
+
+
+class SynergyShiftAnalyzer(CausalImpactPropagationEngine):
+    """
+    Produces horizon-indexed synergy delta tensors for agent-combination patterns.
+    """
+
+    def analyze(
+        self,
+        policy: PolicySchema,
+        baseline_snapshot: CooperativeStateSnapshot,
+        horizons: Sequence[int],
+    ) -> SynergyShiftReport:
+        if not horizons:
+            raise ValueError("horizons must contain at least one horizon value")
+
+        normalized_horizons = tuple(sorted(set(horizons)))
+        if normalized_horizons[0] < 1:
+            raise ValueError("all horizons must be >= 1")
+
+        shift = self._compute_policy_shift(policy)
+        trust_signal = self._trust_signal(baseline_snapshot)
+        calibration_quality = self._calibration_quality(baseline_snapshot)
+        trust_by_entity = self._mean_trust_by_entity(baseline_snapshot)
+
+        horizon_tensors: List[SynergyShiftHorizonProjection] = []
+        for horizon in normalized_horizons:
+            policy_effect = self._effective_policy_shift(policy, shift, horizon)
+
+            synergy_deltas: List[SynergyTensorDelta] = []
+            complementarity_deltas: List[SynergyTensorDelta] = []
+            variability_deltas: List[SynergyTensorDelta] = []
+
+            for matrix in baseline_snapshot.synergy_density_matrices:
+                baseline_matrix = matrix.values
+                projected_matrix = self._project_synergy_matrix(
+                    baseline_matrix=baseline_matrix,
+                    row_labels=matrix.row_labels,
+                    col_labels=matrix.col_labels,
+                    policy_effect=policy_effect,
+                    trust_signal=trust_signal,
+                    calibration_quality=calibration_quality,
+                    trust_by_entity=trust_by_entity,
+                )
+
+                baseline_distribution = self._normalize_matrix(baseline_matrix)
+                projected_distribution = self._normalize_matrix(projected_matrix)
+                distribution_delta = self._matrix_delta(projected_distribution, baseline_distribution)
+                synergy_deltas.append(
+                    SynergyTensorDelta(
+                        matrix_id=matrix.matrix_id,
+                        row_labels=matrix.row_labels,
+                        col_labels=matrix.col_labels,
+                        baseline_values=baseline_distribution,
+                        projected_values=projected_distribution,
+                        delta_values=distribution_delta,
+                    )
+                )
+
+                baseline_complementarity = self._complementarity_probabilities(
+                    baseline_distribution,
+                    matrix.row_labels,
+                    matrix.col_labels,
+                    trust_by_entity,
+                )
+                projected_complementarity = self._complementarity_probabilities(
+                    projected_distribution,
+                    matrix.row_labels,
+                    matrix.col_labels,
+                    trust_by_entity,
+                )
+                complementarity_deltas.append(
+                    SynergyTensorDelta(
+                        matrix_id=matrix.matrix_id,
+                        row_labels=matrix.row_labels,
+                        col_labels=matrix.col_labels,
+                        baseline_values=baseline_complementarity,
+                        projected_values=projected_complementarity,
+                        delta_values=self._matrix_delta(
+                            projected_complementarity, baseline_complementarity
+                        ),
+                    )
+                )
+
+                baseline_variability = self._marginal_influence_variability(
+                    baseline_distribution
+                )
+                projected_variability = self._marginal_influence_variability(
+                    projected_distribution
+                )
+                variability_deltas.append(
+                    SynergyTensorDelta(
+                        matrix_id=matrix.matrix_id,
+                        row_labels=matrix.row_labels,
+                        col_labels=matrix.col_labels,
+                        baseline_values=baseline_variability,
+                        projected_values=projected_variability,
+                        delta_values=self._matrix_delta(projected_variability, baseline_variability),
+                    )
+                )
+
+            horizon_tensors.append(
+                SynergyShiftHorizonProjection(
+                    horizon=horizon,
+                    policy_effect=policy_effect,
+                    projected_synergy_distribution_delta_tensors=tuple(synergy_deltas),
+                    complementarity_emergence_probability_delta_tensors=tuple(complementarity_deltas),
+                    marginal_cooperative_influence_variability_delta_tensors=tuple(
+                        variability_deltas
+                    ),
+                )
+            )
+
+        return SynergyShiftReport(policy_id=policy.policy_id, horizons=tuple(horizon_tensors))
+
+    @staticmethod
+    def _mean_trust_by_entity(snapshot: CooperativeStateSnapshot) -> dict[str, float]:
+        trust_by_entity: dict[str, float] = {}
+        for vector in snapshot.trust_vectors:
+            trust_by_entity[vector.entity_id] = mean(vector.values) if vector.values else 0.5
+        return trust_by_entity
+
+    def _project_synergy_matrix(
+        self,
+        baseline_matrix: tuple[tuple[float, ...], ...],
+        row_labels: tuple[str, ...],
+        col_labels: tuple[str, ...],
+        policy_effect: float,
+        trust_signal: float,
+        calibration_quality: float,
+        trust_by_entity: dict[str, float],
+    ) -> tuple[tuple[float, ...], ...]:
+        projected: List[Tuple[float, ...]] = []
+        for i, row in enumerate(baseline_matrix):
+            out_row: List[float] = []
+            for j, cell in enumerate(row):
+                pair_signal = self._pair_signal(
+                    row_labels[i], col_labels[j], trust_signal, calibration_quality, trust_by_entity
+                )
+                amplified = float(cell) * (1.0 + policy_effect * pair_signal)
+                out_row.append(max(0.0, amplified))
+            projected.append(tuple(out_row))
+        return tuple(projected)
+
+    @staticmethod
+    def _pair_signal(
+        row_label: str,
+        col_label: str,
+        trust_signal: float,
+        calibration_quality: float,
+        trust_by_entity: dict[str, float],
+    ) -> float:
+        row_trust = trust_by_entity.get(row_label, trust_signal)
+        col_trust = trust_by_entity.get(col_label, trust_signal)
+        pair_trust = 0.5 * (row_trust + col_trust)
+        return max(0.0, min(1.5, 0.55 * pair_trust + 0.45 * calibration_quality))
+
+    @staticmethod
+    def _normalize_matrix(matrix: tuple[tuple[float, ...], ...]) -> tuple[tuple[float, ...], ...]:
+        total = sum(sum(float(v) for v in row) for row in matrix)
+        if total <= 0.0:
+            rows = len(matrix)
+            cols = len(matrix[0]) if rows else 0
+            if rows == 0 or cols == 0:
+                return tuple()
+            uniform_value = 1.0 / (rows * cols)
+            return tuple(tuple(uniform_value for _ in range(cols)) for _ in range(rows))
+
+        return tuple(
+            tuple(float(v) / total for v in row)
+            for row in matrix
+        )
+
+    @staticmethod
+    def _matrix_delta(
+        projected: tuple[tuple[float, ...], ...],
+        baseline: tuple[tuple[float, ...], ...],
+    ) -> tuple[tuple[float, ...], ...]:
+        return tuple(
+            tuple(projected[i][j] - baseline[i][j] for j in range(len(projected[i])))
+            for i in range(len(projected))
+        )
+
+    def _complementarity_probabilities(
+        self,
+        distribution: tuple[tuple[float, ...], ...],
+        row_labels: tuple[str, ...],
+        col_labels: tuple[str, ...],
+        trust_by_entity: dict[str, float],
+    ) -> tuple[tuple[float, ...], ...]:
+        probs: List[Tuple[float, ...]] = []
+        for i, row in enumerate(distribution):
+            out_row: List[float] = []
+            for j, value in enumerate(row):
+                row_trust = trust_by_entity.get(row_labels[i], 0.5)
+                col_trust = trust_by_entity.get(col_labels[j], 0.5)
+                trust_gap = abs(row_trust - col_trust)
+                # Higher joint synergy and heterogeneous trust profiles imply stronger complementarity emergence.
+                score = (3.0 * float(value)) + (0.8 * trust_gap) - 1.0
+                out_row.append(1.0 / (1.0 + math.exp(-score)))
+            probs.append(tuple(out_row))
+        return tuple(probs)
+
+    @staticmethod
+    def _marginal_influence_variability(
+        distribution: tuple[tuple[float, ...], ...]
+    ) -> tuple[tuple[float, ...], ...]:
+        if not distribution:
+            return tuple()
+
+        row_marginals = [sum(row) for row in distribution]
+        col_marginals = [sum(distribution[i][j] for i in range(len(distribution))) for j in range(len(distribution[0]))]
+
+        pair_marginals: List[List[float]] = []
+        flat_values: List[float] = []
+        for i in range(len(distribution)):
+            row_values: List[float] = []
+            for j in range(len(distribution[i])):
+                value = 0.5 * (row_marginals[i] + col_marginals[j])
+                row_values.append(value)
+                flat_values.append(value)
+            pair_marginals.append(row_values)
+
+        global_mean = mean(flat_values) if flat_values else 0.0
+        return tuple(
+            tuple(abs(value - global_mean) for value in row)
+            for row in pair_marginals
+        )
