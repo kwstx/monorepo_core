@@ -1,89 +1,117 @@
-# PolicySchemaTranslator
+# Actionable Logic
 
-A module for converting natural language policies into structured, machine-readable objects for multi-agent governance systems.
+Actionable Logic is a framework for converting high-level governance policies into executable constraints for autonomous agents. It provides a complete lifecycle for policy management, including translation from natural language, versioned storage, real-time enforcement through adaptive guardrails, and detailed compliance auditing.
 
-## Overview
+## Core Components
 
-The `PolicySchemaTranslator` bridge the gap between human-written regulations and executable agent instructions. It ensures that every policy includes:
-- **Metadata**: Scope, Domain, and Effective Date.
-- **Logical Conditions**: Parameter-based evaluations (e.g., `trust_score > 0.7`).
-- **Action Triggers**: Immediate actions for agents on activation or violation.
-- **Exception Handling**: Defined scenarios where policies are bypassed or modified.
-- **Actionable Instructions**: Step-by-step guidance for autonomous agents.
+### 1. Policy Translation
+Converts natural language policy descriptions into structured, machine-readable objects. This ensures that human-readable intent is preserved while providing agents with the explicit logic required for autonomous execution.
 
-## Project Structure
+*   **Location**: `src/translator/`
+*   **Key Features**: Heuristic and LLM-driven translation, logic extraction, and validation.
 
-- `src/models/policy_schema.py`: Pydantic models for the structured policy.
-- `src/repository/policy_repository.py`: Versioned, queryable storage for policies and templates.
-- `src/api/main.py`: PolicyAPI implementation for external systems and agents.
-- `src/translator/core.py`: Main translator class and serialization logic.
-- `src/translator/prompt_templates.py`: Instructions for LLMs to perform the translation.
-- `tests/test_policy_api.py`: Verification tests for the PolicyAPI.
-- `tests/test_translation.py`: Example usage and verification flow.
-- `tests/test_repository.py`: Tests for the storage and versioning layer.
+### 2. Policy Repository
+A versioned storage system for policies and templates. It supports indexing by industry, compliance type, and functional area, allowing for rapid adaptation of existing governance frameworks.
 
-## Usage
+*   **Location**: `src/repository/`
+*   **Key Features**: Versioning, template cloning, and multi-criteria metadata search.
 
-### Translation
+### 3. Adaptive Guardrails Engine
+Monitors agent actions in real-time against active policies. It detects violations and conflicts, providing corrective suggestions or blocking prohibited actions before they are executed.
+
+*   **Location**: `src/enforcement/`
+*   **Key Features**: Real-time monitoring, conflict detection, and automated corrective actions.
+
+### 4. Version Control Engine
+Tracks the deployment and adoption of policy updates across an agent ecosystem. It maintains a historical trace of all changes for auditing and enables safe rollbacks of governance configurations.
+
+*   **Location**: `src/version_control/`
+*   **Key Features**: Adoption tracking, compliance impact assessment, and full audit trails.
+
+### 5. Policy API
+A centralized interface for external systems and agents to interact with the framework. It supports policy management, compliance tracing, and counterfactual simulations.
+
+*   **Location**: `src/api/`
+*   **Key Features**: RESTful endpoints, interactive documentation via FastAPI, and simulation hooks.
+
+## Installation
+
+Ensure you have Python 3.10 or higher installed.
+
+1. Clone the repository.
+2. Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Quick Start
+
+### Running the API
+To start the Policy API server:
+
+```bash
+uvicorn src.api.main:app --reload --port 8000
+```
+
+The interactive documentation will be available at `http://localhost:8000/docs`.
+
+### API Overview
+
+*   **`GET /policies`**: Query established policies and templates.
+*   **`POST /policies`**: Upload a new structured policy.
+*   **`POST /simulate`**: Test a policy against a system state without deploying.
+*   **`POST /check-action`**: Live hook for agents to verify actions against guardrails.
+*   **`GET /compliance/traces/{agent_id}`**: Retrieve historical compliance data.
+
+### Basic Usage
+
+#### Translation and Storage
+Example of translating a policy and saving it to the repository:
 
 ```python
-from src.translator import PolicySchemaTranslator
-from src.models import PolicyDomain, PolicyScope
+from src.translator.core import PolicySchemaTranslator
+from src.repository.policy_repository import PolicyRepository
 
 translator = PolicySchemaTranslator()
+repo = PolicyRepository("sqlite:///policies.db")
 
-# 1. Translate NL to Structured Object
-# structured_policy = translator.translate("Your natural language policy here")
+# Translate natural language to a structured object
+policy = translator.translate("All high-value transfers require a trust score above 0.8")
 
-# 2. Export to JSON for Agent consumption
-# json_payload = translator.export_as_json(structured_policy)
+# Save to repository
+repo.save_policy(policy)
 ```
 
-### Repository & Templates
+#### Action Monitoring
+Example of checking an agent action against active guardrails:
 
 ```python
-from src.repository import PolicyRepository
+from src.enforcement.guardrails import AdaptiveGuardrailsEngine
 
-repo = PolicyRepository("sqlite:///my_policies.db")
+guardrails = AdaptiveGuardrailsEngine()
 
-# Save a policy
-repo.save_policy(structured_policy)
-
-# Browse templates by industry
-templates = repo.list_policies(industry="Healthcare", is_template=True)
-
-# Clone and adapt a template
-new_policy = repo.clone_template(
-    template_id="BASE-AUTH",
-    new_policy_id="CLIENT-X-AUTH",
-    updates={"industry": "Finance", "functional_area": "Account Management"}
+# Monitor a proposed action
+response = guardrails.monitor_action(
+    agent_id="agent-001",
+    action={"type": "transfer", "amount": 5000}
 )
+
+print(response["suggestion"])
 ```
 
-### Template Extensibility & Validation
+## Testing
 
-The `TemplateExtensibilityModule` allows for advanced template management, including legal validation and live integration.
+Run the test suite using `pytest`:
 
-```python
-from src.extensibility import TemplateExtensibilityModule
-from src.repository import PolicyRepository
-from src.live_update import LiveUpdateEngine
-
-repo = PolicyRepository()
-engine = LiveUpdateEngine()
-extensibility = TemplateExtensibilityModule(repo, engine)
-
-# 1. Create a new template with validation
-# extensibility.create_template(my_new_template)
-
-# 2. Customize a template and automatically update live engine
-# extensibility.customize_template("BASE-TMPL", "NEW-POL", {"industry": "Web3"})
+```bash
+pytest
 ```
-
-The module ensures that all new templates and customized policies meet internal standards and are immediately propagated to active workflows through the `LiveUpdateEngine`.
 
 ## Requirements
 
 - Python 3.10+
-- `pydantic>=2.0.0`
-- `sqlalchemy`
+- Pydantic 2.0+
+- FastAPI
+- SQLAlchemy
+- Uvicorn
