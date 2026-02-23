@@ -4,6 +4,7 @@ import { AgentIdentity } from '../schema/MessageSchema';
 import { ReputationAndSynergyModule } from '../engine/ReputationAndSynergyModule';
 import { BudgetManager } from '../engine/BudgetManager';
 import { SettlementEngine, ActualDeliverable } from '../engine/SettlementEngine';
+import { ImmutableAuditLog } from '../audit/ImmutableAuditLog';
 
 /**
  * Demo: SettlementEngine Validation, Economic Rewards, and Reputation Updates
@@ -15,7 +16,8 @@ async function runDemo() {
     // 1. Initialize core modules
     const reputationModule = new ReputationAndSynergyModule();
     const budgetManager = new BudgetManager();
-    const settlementEngine = new SettlementEngine(reputationModule, budgetManager);
+    const auditLog = new ImmutableAuditLog();
+    const settlementEngine = new SettlementEngine(reputationModule, budgetManager, auditLog);
 
     // 2. Setup Agents and initial budgets
     const agentAlpha: AgentIdentity = {
@@ -73,6 +75,11 @@ async function runDemo() {
     contract = ContractFactory.signContract(contract, agentAlpha, 'sig-a');
     contract = ContractFactory.signContract(contract, agentBeta, 'sig-b');
     contract = ContractFactory.commit(contract);
+    contract = ContractFactory.complete(contract, 'system', {
+        success: true,
+        summary: 'Pipeline delivered, but accuracy slightly below target.',
+        evidence: ['load_test.log', 'accuracy_report.csv']
+    });
 
     console.log(`Contract Created: ${contract.contractId}`);
     console.log(`Status: ${contract.status}`);
@@ -92,11 +99,22 @@ async function runDemo() {
         }
     ];
 
-    // Mark contract as COMPLETED (but with partial results)
-    contract = ContractFactory.complete(contract, 'system', {
-        success: true,
-        summary: 'Pipeline delivered, but accuracy slightly below target.',
-        evidence: ['load_test.log', 'accuracy_report.csv']
+    // Sync negotiation/contract history into settlement log for unified traceability.
+    ContractFactory.getAuditTrail(contract).forEach(event => {
+        auditLog.record({
+            domain: event.domain,
+            action: event.action,
+            outcome: event.outcome,
+            contractId: event.contractId,
+            correlationId: event.correlationId,
+            sessionId: event.sessionId,
+            messageId: event.messageId,
+            actorId: event.actorId,
+            details: {
+                sourceEventId: event.eventId,
+                sourceSequence: event.sequence
+            }
+        });
     });
 
     console.log("--- Executing Settlement ---");
@@ -120,6 +138,8 @@ async function runDemo() {
     const alphaRep = reputationModule.getReputation(agentAlpha.id);
     console.log(`Alpha Reputation Score: ${alphaRep?.globalScore.toFixed(4)}`);
     console.log(`Alpha Reliability: ${alphaRep?.metrics.averageReliability.toFixed(4)}`);
+    const integrity = auditLog.verifyIntegrity();
+    console.log(`Audit Integrity Valid: ${integrity.valid}`);
 
     console.log("\n=== Settlement Complete ===");
 }

@@ -3,6 +3,7 @@ import { SharedTaskContract, MeasurableDeliverable, PenaltyClause } from '../sch
 import { ReputationAndSynergyModule } from './ReputationAndSynergyModule';
 import { BudgetManager } from './BudgetManager';
 import { CollaborationRecord } from '../schema/ReputationSchema';
+import { AuditSink } from '../audit/ImmutableAuditLog';
 
 export interface ActualDeliverable {
     name: string;
@@ -40,7 +41,8 @@ export interface SettlementReport {
 export class SettlementEngine {
     constructor(
         private reputationModule: ReputationAndSynergyModule,
-        private budgetManager: BudgetManager
+        private budgetManager: BudgetManager,
+        private auditSink?: AuditSink
     ) { }
 
     /**
@@ -50,7 +52,29 @@ export class SettlementEngine {
         contract: SharedTaskContract,
         outcomes: ActualDeliverable[]
     ): SettlementReport {
+        this.auditSink?.record({
+            domain: 'EXECUTION',
+            action: 'SETTLEMENT_STARTED',
+            outcome: 'INFO',
+            contractId: contract.contractId,
+            correlationId: contract.correlationId,
+            details: {
+                status: contract.status,
+                submittedOutcomes: outcomes.length
+            }
+        });
+
         if (contract.status !== 'COMPLETED' && contract.status !== 'ROLLED_BACK') {
+            this.auditSink?.record({
+                domain: 'REJECTION',
+                action: 'SETTLEMENT_REJECTED',
+                outcome: 'FAILURE',
+                contractId: contract.contractId,
+                correlationId: contract.correlationId,
+                details: {
+                    reason: `Cannot settle contract in status: ${contract.status}`
+                }
+            });
             throw new Error(`Cannot settle contract in status: ${contract.status}`);
         }
 
@@ -64,6 +88,18 @@ export class SettlementEngine {
         // Release rewards: compensation minus penalties
         // Adjust budget logic: release the remaining balance to the agent
         const rewardsReleased = Math.max(0, baseCompensation - totalPenalty);
+        this.auditSink?.record({
+            domain: penalties.length > 0 ? 'REJECTION' : 'APPROVAL',
+            action: 'SETTLEMENT_ECONOMIC_DECISION',
+            outcome: penalties.length > 0 ? 'WARNING' : 'SUCCESS',
+            contractId: contract.contractId,
+            correlationId: contract.correlationId,
+            details: {
+                penalties,
+                totalPenalty,
+                rewardsReleased
+            }
+        });
 
         // Update economic tracking
         contract.participatingAgents.forEach(agentId => {
@@ -104,8 +140,7 @@ export class SettlementEngine {
         }));
 
         reputationUpdates.forEach(update => this.reputationModule.recordOutcome(update));
-
-        return {
+        const report = {
             contractId: contract.contractId,
             performanceScore: averageFulfillment,
             deliverableResults,
@@ -114,6 +149,21 @@ export class SettlementEngine {
             finalReputationUpdate: reputationUpdates[0], // Return the first one for the report
             timestamp
         };
+
+        this.auditSink?.record({
+            domain: 'EXECUTION',
+            action: 'SETTLEMENT_COMPLETED',
+            outcome: contract.status === 'COMPLETED' ? 'SUCCESS' : 'FAILURE',
+            contractId: contract.contractId,
+            correlationId: contract.correlationId,
+            details: {
+                performanceScore: averageFulfillment,
+                penaltiesApplied: penalties.length,
+                rewardsReleased
+            }
+        });
+
+        return report;
     }
 
     private validateDeliverables(
@@ -152,8 +202,8 @@ export class SettlementEngine {
     private calculatePenalties(
         clauses: PenaltyClause[],
         results: SettlementReport['deliverableResults']
-    ): SettlementReport['penaltiesApplied'][] {
-        const penalties: SettlementReport['penaltiesApplied'][] = [];
+    ): SettlementReport['penaltiesApplied'] {
+        const penalties: SettlementReport['penaltiesApplied'] = [];
 
         results.forEach(res => {
             if (res.status !== 'MET') {

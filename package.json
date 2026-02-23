@@ -5,11 +5,22 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "demo": "ts-node src/examples/reputation_demo.ts"
+        "demo": "ts-node src/examples/reputation_demo.ts",
+        "start": "ts-node src/api/app.ts"
     },
     "devDependencies": {
-        "typescript": "^5.0.0",
+        "@types/body-parser": "^1.19.6",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/node": "^20.0.0",
+        "@types/uuid": "^10.0.0",
         "ts-node": "^10.9.0",
-        "@types/node": "^20.0.0"
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "body-parser": "^2.2.2",
+        "cors": "^2.8.6",
+        "express": "^5.2.1",
+        "uuid": "^13.0.0"
     }
 }
