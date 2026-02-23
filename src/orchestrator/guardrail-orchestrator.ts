@@ -1,0 +1,77 @@
+import { ActionContext, EnforcementState, Violation } from '../core/models';
+import { EnforcementEventBus, EnforcementEvents } from '../core/event-bus';
+import { PreExecutionLayer } from '../layers/pre-execution/pre-execution-layer';
+import { InProcessLayer } from '../layers/in-process/in-process-layer';
+import { PostExecutionLayer } from '../layers/post-execution/post-execution-layer';
+
+export class GuardrailOrchestrator {
+    private eventBus: EnforcementEventBus;
+    private preExecution: PreExecutionLayer;
+    private inProcess: InProcessLayer;
+    private postExecution: PostExecutionLayer;
+    private activeActions: Map<string, ActionContext> = new Map();
+
+    constructor() {
+        this.eventBus = EnforcementEventBus.getInstance();
+        this.preExecution = new PreExecutionLayer();
+        this.inProcess = new InProcessLayer();
+        this.postExecution = new PostExecutionLayer();
+
+        this.setupEventHandlers();
+    }
+
+    private setupEventHandlers() {
+        this.eventBus.on(EnforcementEvents.VIOLATION_DETECTED, ({ actionId, violation }: { actionId: string, violation: Violation }) => {
+            console.warn(`[Orchestrator] Violation detected for action ${actionId}: ${violation.description} (${violation.severity})`);
+            const context = this.activeActions.get(actionId);
+            if (context && violation.severity === 'CRITICAL') {
+                console.error(`[Orchestrator] Critical violation! Halting/Reversing action ${actionId}`);
+                // Logic to halt execution could go here
+            }
+        });
+
+        this.eventBus.on(EnforcementEvents.REMEDIATION_TRIGGERED, (context: ActionContext) => {
+            console.log(`[Orchestrator] Remediation in progress for action ${context.actionId}`);
+        });
+    }
+
+    public async coordinate(agentId: string, intent: string, params: Record<string, any>): Promise<ActionContext> {
+        const actionId = `act-${Date.now()}`;
+        let context: ActionContext = {
+            actionId,
+            agentId,
+            intent,
+            params,
+            status: EnforcementState.PENDING,
+            violations: []
+        };
+
+        this.activeActions.set(actionId, context);
+        this.eventBus.emit(EnforcementEvents.ACTION_PROPOSED, context);
+
+        try {
+            // 1. Pre-Execution
+            context = await this.preExecution.process(context);
+            if (context.status === EnforcementState.PRE_EXECUTION_FAILED) {
+                return context;
+            }
+
+            // 2. In-Process
+            context = await this.inProcess.process(context);
+
+            // Simulate execution time
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            context.endTime = new Date();
+            context.status = EnforcementState.COMPLETED;
+            this.eventBus.emit(EnforcementEvents.ACTION_COMPLETED, context);
+
+            // 3. Post-Execution
+            context = await this.postExecution.process(context);
+
+            return context;
+        } finally {
+            this.activeActions.delete(actionId);
+        }
+    }
+}
