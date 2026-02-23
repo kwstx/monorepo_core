@@ -12,6 +12,12 @@ export class DecisionEvaluationFramework {
     resourceAnalyzer = new ResourceAnalyzer();
     complianceEstimator = new ComplianceEstimator();
     strategicAlignmentModule = new StrategicAlignmentModule();
+    getImpactSimulationModule() {
+        return this.impactSimulator;
+    }
+    getComplianceEstimator() {
+        return this.complianceEstimator;
+    }
     /**
      * Intercepts a raw action and maps its raw data to a structured DecisionObject.
      * This involves parsing intent, calculating resource usage, and projecting impact.

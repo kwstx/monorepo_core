@@ -5,6 +5,7 @@ import type { RiskScoringContext, CooperativeSystemState } from './RiskScoringEn
 import { ClassificationEngine } from './ClassificationEngine.js';
 import { HumanOverrideInterface } from './HumanOverrideInterface.js';
 import type { Stakeholder, OverrideRationale, ContextualAnnotation } from './HumanOverrideInterface.js';
+import { ThresholdOptimizationEngine } from './ThresholdOptimizationEngine.js';
 
 async function main() {
     const framework = new DecisionEvaluationFramework();
@@ -428,6 +429,224 @@ async function main() {
     console.log(`Recalibrated Decision Score: ${recalibratedScore.decisionScore}/100`);
     console.log(`Score Shift: ${(recalibratedScore.decisionScore - scoreResult.decisionScore).toFixed(2)} points`);
     console.log('(Override feedback has adjusted the engine\'s adaptive multipliers)');
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  THRESHOLD OPTIMIZATION ENGINE DEMONSTRATION
+    // ═══════════════════════════════════════════════════════════════════════
+
+    console.log('\n\n========================================');
+    console.log('  THRESHOLD OPTIMIZATION ENGINE');
+    console.log('========================================');
+
+    const optimizationEngine = new ThresholdOptimizationEngine({
+        baseLearningRate: 0.1,
+        maxShiftPerCycle: 5.0,
+        minimumSignalCount: 3,
+        maxVersionHistory: 50,
+    });
+
+    // ── Step 1: Initial State ────────────────────────────────────────────
+
+    console.log('\n--- Step 1: Initial Optimization Engine State ---');
+    const initialVersion = optimizationEngine.getActiveVersion()!;
+    console.log(`Active Version: v${initialVersion.versionNumber}`);
+    console.log(`Conservatism Bias: ${initialVersion.conservatismBias.toFixed(4)}`);
+    console.log(`Threshold Band: block <= ${initialVersion.thresholdBand.blockMax.toFixed(2)}, auto-approve >= ${initialVersion.thresholdBand.autoApproveMin.toFixed(2)}`);
+    console.log(`Pending Signals: ${optimizationEngine.getPendingSignalCount()}`);
+
+    // ── Step 2: Ingest False Positive Signal ─────────────────────────────
+
+    console.log('\n--- Step 2: Ingesting False Positive Signal ---');
+    console.log('(System blocked an action that was later determined to be safe)');
+
+    const fpSignal = optimizationEngine.createFalsePositiveSignal(
+        decisionObject.id,
+        scoreResult,
+        classification,
+        ['regulatoryExposure', 'operationalRisk'],
+        0.85
+    );
+    optimizationEngine.ingestSignal(fpSignal);
+
+    // ── Step 3: Ingest Missed Violation Signal ───────────────────────────
+
+    console.log('\n--- Step 3: Ingesting Missed Violation Signal ---');
+    console.log('(System approved an action that resulted in a compliance breach)');
+
+    const mvSignal = optimizationEngine.createMissedViolationSignal(
+        'decision-missed-001',
+        score2,
+        classification2,
+        ['regulatoryExposure', 'financialCost'],
+        0.75,
+        0.9
+    );
+    optimizationEngine.ingestSignal(mvSignal);
+
+    // ── Step 4: Ingest Real Outcome Signal ───────────────────────────────
+
+    console.log('\n--- Step 4: Ingesting Real Outcome Signal ---');
+    console.log('(Post-execution observation: compliance was lower than predicted)');
+
+    const outcomeSignal = optimizationEngine.createOutcomeSignal(
+        decision2.id,
+        score2,
+        classification2,
+        {
+            observedCompliance: 0.62,
+            stabilityIncident: false,
+            costRatio: 1.35,
+        },
+        0.92
+    );
+    optimizationEngine.ingestSignal(outcomeSignal);
+
+    // ── Step 5: Ingest Human Override Signal ─────────────────────────────
+
+    console.log('\n--- Step 5: Ingesting Human Override Signal ---');
+    console.log('(Feeding the earlier rejection override into the optimization engine)');
+
+    const overrideSignal = optimizationEngine.createOverrideSignal(
+        decisionObject.id,
+        scoreResult,
+        classification,
+        rejectionRecord
+    );
+    optimizationEngine.ingestSignal(overrideSignal);
+
+    // ── Step 6: Run First Optimization Cycle ─────────────────────────────
+
+    console.log('\n--- Step 6: Running First Optimization Cycle ---');
+    console.log(`Pending Signals: ${optimizationEngine.getPendingSignalCount()}`);
+
+    const adaptationSignal = overrideInterface.computeAdaptationSignal();
+    const report1 = optimizationEngine.optimize(
+        scoringEngine,
+        classificationEngine,
+        adaptationSignal
+    );
+
+    if (report1) {
+        console.log(`\nOptimization Report:`);
+        console.log(`  New Version: v${report1.newVersion.versionNumber}`);
+        console.log(`  Signals Processed: ${report1.signalsProcessed}`);
+        console.log(`  Signal Types: ${JSON.stringify(report1.signalTypeCounts)}`);
+        console.log(`  Effective Learning Rate: ${report1.effectiveLearningRate}`);
+        console.log(`  Conservatism Bias Delta: ${report1.conservatismBiasDelta}`);
+        console.log(`  Dampened: ${report1.dampened}`);
+        console.log(`  Threshold Band Shift: auto-approve δ=${report1.thresholdBandShift.autoApproveMinDelta}, block δ=${report1.thresholdBandShift.blockMaxDelta}`);
+
+        console.log(`\n  Applied Dimension Deltas:`);
+        for (const [dim, delta] of Object.entries(report1.appliedDimensionDeltas)) {
+            const direction = (delta as number) > 0 ? 'TIGHTENED' : 'RELAXED';
+            console.log(`    ${dim}: ${(delta as number).toFixed(6)} (${direction})`);
+        }
+    }
+
+    // ── Step 7: Ingest More Signals and Run Second Cycle ─────────────────
+
+    console.log('\n--- Step 7: Second Optimization Cycle (Additional Signals) ---');
+
+    // Three more real-outcome signals showing system is now well-calibrated
+    for (let i = 0; i < 3; i++) {
+        const goodOutcome = optimizationEngine.createOutcomeSignal(
+            `decision-good-${i}`,
+            scoreResult,
+            classification,
+            {
+                observedCompliance: 0.88 + (i * 0.04),
+                stabilityIncident: false,
+                costRatio: 0.9,
+            },
+            0.85
+        );
+        optimizationEngine.ingestSignal(goodOutcome);
+    }
+
+    const report2 = optimizationEngine.optimize(scoringEngine, classificationEngine);
+
+    if (report2) {
+        console.log(`\nSecond Optimization Report:`);
+        console.log(`  New Version: v${report2.newVersion.versionNumber}`);
+        console.log(`  Signals Processed: ${report2.signalsProcessed}`);
+        console.log(`  Effective Learning Rate: ${report2.effectiveLearningRate}`);
+        console.log(`  Conservatism Bias: ${report2.newVersion.conservatismBias.toFixed(4)}`);
+        console.log(`  Dampened: ${report2.dampened}`);
+    }
+
+    // ── Step 8: Version History Audit ─────────────────────────────────────
+
+    console.log('\n--- Step 8: Version History Audit ---');
+    const versions = optimizationEngine.getVersionHistory();
+    console.log(`Total Versions: ${versions.length}`);
+
+    for (const version of versions) {
+        console.log(`\n  v${version.versionNumber} [${version.active ? 'ACTIVE' : 'inactive'}]`);
+        console.log(`    Created: ${version.createdAt.toISOString()}`);
+        console.log(`    Reason: ${version.changeReason}`);
+        console.log(`    Conservatism Bias: ${version.conservatismBias.toFixed(4)}`);
+        console.log(`    Threshold Band: block <= ${version.thresholdBand.blockMax.toFixed(2)}, auto-approve >= ${version.thresholdBand.autoApproveMin.toFixed(2)}`);
+        console.log(`    Triggering Signals: ${version.triggeringSignalIds.length}`);
+    }
+
+    // ── Step 9: Rollback ──────────────────────────────────────────────────
+
+    console.log('\n--- Step 9: Rolling Back to Version 1 ---');
+    console.log('(Reverting to baseline configuration after detecting unexpected behavior)');
+
+    const v1 = optimizationEngine.getVersionByNumber(1)!;
+    const rollbackResult = optimizationEngine.rollback(
+        v1.versionId,
+        'Automated safety check detected anomalous threshold drift',
+        scoringEngine,
+        classificationEngine
+    );
+
+    console.log(`\nRollback Result:`);
+    console.log(`  Success: ${rollbackResult.success}`);
+    console.log(`  Rolled back from: v${rollbackResult.rolledBackFrom.versionNumber}`);
+    console.log(`  Rolled back to: v${rollbackResult.rolledBackTo.versionNumber}`);
+    console.log(`  Reason: ${rollbackResult.reason}`);
+
+    // ── Step 10: Post-Rollback State ─────────────────────────────────────
+
+    console.log('\n--- Step 10: Post-Rollback State ---');
+    const activeAfterRollback = optimizationEngine.getActiveVersion()!;
+    console.log(`Active Version: v${activeAfterRollback.versionNumber}`);
+    console.log(`Conservatism Bias: ${activeAfterRollback.conservatismBias.toFixed(4)}`);
+    console.log(`Threshold Band: block <= ${activeAfterRollback.thresholdBand.blockMax.toFixed(2)}, auto-approve >= ${activeAfterRollback.thresholdBand.autoApproveMin.toFixed(2)}`);
+
+    const postRollbackScore = scoringEngine.scoreDecision(decisionObject, context, systemState);
+    console.log(`\nPost-Rollback Decision Score: ${postRollbackScore.decisionScore}/100`);
+    console.log(`(Compare with original: ${scoreResult.decisionScore}/100)`);
+
+    // ── Step 11: Error Rate Indicators ───────────────────────────────────
+
+    console.log('\n--- Error Rate Indicators ---');
+    const indicators = optimizationEngine.getErrorRateIndicators();
+    console.log(`False Positive Rate (EMA): ${(indicators.falsePositiveRateEMA * 100).toFixed(2)}%`);
+    console.log(`Missed Violation Rate (EMA): ${(indicators.missedViolationRateEMA * 100).toFixed(2)}%`);
+
+    // ── Step 12: Signal History Summary ───────────────────────────────────
+
+    console.log('\n--- Signal History Summary ---');
+    const historySummary = optimizationEngine.getSignalHistorySummary();
+    console.log(`Total Processed Signals: ${historySummary.total}`);
+    console.log(`Average Signal Confidence: ${(historySummary.averageConfidence * 100).toFixed(1)}%`);
+    console.log(`By Type:`);
+    for (const [type, count] of Object.entries(historySummary.byType)) {
+        console.log(`  ${type}: ${count}`);
+    }
+
+    // ── Final Version History ──────────────────────────────────────────
+
+    console.log('\n--- Final Version History (Post-Rollback) ---');
+    const finalVersions = optimizationEngine.getVersionHistory();
+    console.log(`Total Versions: ${finalVersions.length}`);
+    for (const version of finalVersions) {
+        const marker = version.active ? ' ←── ACTIVE' : '';
+        console.log(`  v${version.versionNumber}: ${version.changeReason}${marker}`);
+    }
 }
 
 main().catch(err => {
