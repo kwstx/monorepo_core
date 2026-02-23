@@ -7,7 +7,8 @@ type RiskDimension =
     | 'reputationalImpact'
     | 'cooperativeSystemStability'
     | 'predictedComplianceProbability'
-    | 'simulationImpact';
+    | 'simulationImpact'
+    | 'opportunityCostProjection';
 
 export interface RiskScoringContext {
     /**
@@ -56,6 +57,7 @@ export interface DimensionScores {
     cooperativeSystemStability: number;
     predictedComplianceProbability: number;
     simulationImpact: number;
+    opportunityCostProjection: number;
 }
 
 export interface RiskScoreBreakdown {
@@ -63,6 +65,8 @@ export interface RiskScoreBreakdown {
     weights: Record<RiskDimension, number>;
     weightedRisk: number;
     weightedCompliance: number;
+    weightedSimulation: number;
+    weightedOpportunity: number;
 }
 
 export interface RiskScoreResult {
@@ -90,6 +94,7 @@ export class RiskScoringEngine {
         cooperativeSystemStability: 1.0,
         predictedComplianceProbability: 1.1,
         simulationImpact: 1.2,
+        opportunityCostProjection: 1.0,
     };
 
     /**
@@ -103,6 +108,7 @@ export class RiskScoringEngine {
         cooperativeSystemStability: 1.0,
         predictedComplianceProbability: 1.0,
         simulationImpact: 1.0,
+        opportunityCostProjection: 1.0,
     };
 
     public scoreDecision(
@@ -136,12 +142,17 @@ export class RiskScoringEngine {
         const weightedSimulation = this.clamp01(
             dimensionScores.simulationImpact * weights.simulationImpact
         );
+        const weightedOpportunity = this.clamp01(
+            dimensionScores.opportunityCostProjection * weights.opportunityCostProjection
+        );
 
-        // Decision score favors high compliance, high simulation impact, and low risk pressure.
+        // Decision score favors high compliance, high simulation impact,
+        // high opportunity cost of blocking, and low risk pressure.
         const riskPressure = this.clamp01(
-            (weightedRisk * 0.6) +
-            ((1 - weightedCompliance) * 0.2) +
-            ((1 - weightedSimulation) * 0.2)
+            (weightedRisk * 0.55) +
+            ((1 - weightedCompliance) * 0.15) +
+            ((1 - weightedSimulation) * 0.15) +
+            ((1 - weightedOpportunity) * 0.15)
         );
         const decisionScore = this.clamp01(1 - riskPressure) * 100;
 
@@ -153,6 +164,8 @@ export class RiskScoringEngine {
                 weights,
                 weightedRisk: Number(weightedRisk.toFixed(4)),
                 weightedCompliance: Number(weightedCompliance.toFixed(4)),
+                weightedSimulation: Number(weightedSimulation.toFixed(4)),
+                weightedOpportunity: Number(weightedOpportunity.toFixed(4)),
             }
         };
     }
@@ -231,6 +244,7 @@ export class RiskScoringEngine {
         const cooperativeSystemStability = this.computeCooperativeSystemStability(decision, systemState);
         const predictedComplianceProbability = this.computePredictedCompliance(decision, context, systemState);
         const simulationImpact = this.computeSimulationImpact(decision);
+        const opportunityCostProjection = this.computeOpportunityCostProjection(decision, context);
 
         return {
             operationalRisk,
@@ -240,6 +254,7 @@ export class RiskScoringEngine {
             cooperativeSystemStability,
             predictedComplianceProbability,
             simulationImpact,
+            opportunityCostProjection,
         };
     }
 
@@ -256,6 +271,7 @@ export class RiskScoringEngine {
             cooperativeSystemStability: this.baseWeights.cooperativeSystemStability,
             predictedComplianceProbability: this.baseWeights.predictedComplianceProbability,
             simulationImpact: this.baseWeights.simulationImpact,
+            opportunityCostProjection: this.baseWeights.opportunityCostProjection,
         };
 
         // System-state sensitivity.
@@ -285,10 +301,12 @@ export class RiskScoringEngine {
         // Contextual multipliers.
         const budgetPressure = this.clamp01(context.budgetPressure ?? 0);
         weights.financialCost *= 1 + (budgetPressure * 0.9);
+        weights.opportunityCostProjection *= 1 + ((1 - budgetPressure) * 0.35);
 
         const dataSensitivity = this.clamp01(context.dataSensitivity ?? 0);
         weights.regulatoryExposure *= 1 + (dataSensitivity * 0.7);
         weights.reputationalImpact *= 1 + (dataSensitivity * 0.5);
+        weights.opportunityCostProjection *= 1 + ((1 - dataSensitivity) * 0.15);
 
         // User-supplied strategic priorities.
         if (context.dimensionPriorities) {
@@ -316,7 +334,7 @@ export class RiskScoringEngine {
         }
 
         if (sum <= 0) {
-            const uniform = 1 / 7;
+            const uniform = 1 / 8;
             return {
                 operationalRisk: uniform,
                 regulatoryExposure: uniform,
@@ -325,6 +343,7 @@ export class RiskScoringEngine {
                 cooperativeSystemStability: uniform,
                 predictedComplianceProbability: uniform,
                 simulationImpact: uniform,
+                opportunityCostProjection: uniform,
             };
         }
 
@@ -346,8 +365,17 @@ export class RiskScoringEngine {
 
         const permissionBreadth = Math.min(decision.authorityScope.permissions.length / 5, 1);
         const loadAmplifier = this.clamp01(systemState.loadFactor);
+        const computedResourceRisk = this.clamp01(
+            (decision.resourceAnalysis.computationalCostScore * 0.7) +
+            (Math.min(decision.resourceAnalysis.bandwidthUtilizationMbps / 100, 1) * 0.3)
+        );
 
-        return this.clamp01((resourcePressure * 0.5) + (permissionBreadth * 0.3) + (loadAmplifier * 0.2));
+        return this.clamp01(
+            (resourcePressure * 0.35) +
+            (permissionBreadth * 0.2) +
+            (loadAmplifier * 0.15) +
+            (computedResourceRisk * 0.3)
+        );
     }
 
     private computeRegulatoryExposure(decision: DecisionObject, context: RiskScoringContext): number {
@@ -370,6 +398,12 @@ export class RiskScoringEngine {
     }
 
     private computeFinancialCost(decision: DecisionObject, context: RiskScoringContext): number {
+        if (decision.resourceAnalysis?.estimatedFinancialExpenditureUSD !== undefined) {
+            const normalizedCost = Math.min(decision.resourceAnalysis.estimatedFinancialExpenditureUSD / 100, 1);
+            const budgetPressure = this.clamp01(context.budgetPressure ?? 0);
+            return this.clamp01((normalizedCost * 0.75) + (budgetPressure * 0.25));
+        }
+
         const unitCostMap: Record<string, number> = {
             CPU: 0.002,
             API_CALL: 0.01,
@@ -416,6 +450,11 @@ export class RiskScoringEngine {
         context: RiskScoringContext,
         systemState: CooperativeSystemState
     ): number {
+        // If an advanced forecast is available from the ComplianceEstimator, prioritize it.
+        if (decision.complianceForecast) {
+            return decision.complianceForecast.overallProbability;
+        }
+
         const policyRisk = this.computeRegulatoryExposure(decision, context);
         const operationalRisk = this.computeOperationalRisk(decision, systemState);
         const historicalCompliance = this.clamp01(context.historicalComplianceRate ?? 0.5);
@@ -439,6 +478,23 @@ export class RiskScoringEngine {
             (synergy * 0.2) +
             (trust * 0.2) +
             (evolution * 0.2)
+        );
+    }
+
+    private computeOpportunityCostProjection(decision: DecisionObject, context: RiskScoringContext): number {
+        const normalizedBlockingCost = this.clamp01(
+            decision.resourceAnalysis.projectedOpportunityCostOfBlockingUSD / 300
+        );
+        const tradeoffScore = this.clamp01(decision.resourceAnalysis.opportunityTradeoffScore);
+        const efficiency = this.clamp01(decision.resourceAnalysis.economicEfficiencyScore);
+        const budgetPressure = this.clamp01(context.budgetPressure ?? 0);
+
+        // Budget pressure dampens willingness to pay opportunity premiums.
+        return this.clamp01(
+            (normalizedBlockingCost * 0.5) +
+            (tradeoffScore * 0.3) +
+            (efficiency * 0.2) -
+            (budgetPressure * 0.15)
         );
     }
 

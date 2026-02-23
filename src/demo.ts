@@ -26,6 +26,7 @@ async function main() {
     const decisionObject = await framework.evaluateAction(rawAction);
     console.log(`Action ID: ${decisionObject.id}`);
     console.log(`Intent: ${decisionObject.intent}`);
+    console.log(`Projected Opportunity Cost of Blocking: $${decisionObject.resourceAnalysis.projectedOpportunityCostOfBlockingUSD}`);
 
     // Scoring context
     const context: RiskScoringContext = {
@@ -47,11 +48,26 @@ async function main() {
 
     console.log(`Final Decision Score: ${scoreResult.decisionScore}/100`);
     console.log(`Risk Pressure: ${(scoreResult.riskPressure * 100).toFixed(2)}%`);
-    console.log('\nBreakdown:');
+
+    if (decisionObject.complianceForecast) {
+        console.log('\n--- Probabilistic Compliance Lifecycle Forecast ---');
+        console.log(`Overall Compliance Probability: ${(decisionObject.complianceForecast.overallProbability * 100).toFixed(2)}%`);
+        console.log(`Lifecycle States: ${JSON.stringify(decisionObject.complianceForecast.lifecycleStageProbabilities, null, 2)}`);
+        console.log(`Primary Risk Drivers: ${decisionObject.complianceForecast.primaryRiskDrivers.join(', ')}`);
+        console.log(`Estimated Drift Impact: ${decisionObject.complianceForecast.estimatedDriftImpact.toFixed(4)}`);
+    }
+
+    console.log(`Opportunity Projection: ${(scoreResult.breakdown.dimensionScores.opportunityCostProjection * 100).toFixed(2)}%`);
+
+    console.log('\nDimension Scores:');
     console.log(JSON.stringify(scoreResult.breakdown.dimensionScores, null, 2));
 
     if (scoreResult.decisionScore < 70) {
-        console.log('\n[RESULT] ACTION FLAGGED FOR REVIEW');
+        if (scoreResult.breakdown.dimensionScores.opportunityCostProjection > 0.65) {
+            console.log('\n[RESULT] ACTION FLAGGED FOR REVIEW (HIGH OPPORTUNITY COST IF BLOCKED)');
+        } else {
+            console.log('\n[RESULT] ACTION FLAGGED FOR REVIEW');
+        }
     } else {
         console.log('\n[RESULT] ACTION ALLOWED');
     }

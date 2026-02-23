@@ -1,3 +1,5 @@
+import type { ComplianceForecast } from './ComplianceEstimator.js';
+
 /**
  * Represents the standardized input for risk-weighted scoring.
  * Encapsulates all relevant metadata for evaluating a proposed agent action.
@@ -45,6 +47,19 @@ export interface DecisionObject {
         realWorldTaskImpact: number; // -1.0 to 1.0
         predictiveSynergyDensity: number; // 0.0 to 1.0
         cooperativeIntelligenceEvolution: number; // -1.0 to 1.0
+    };
+
+    /** Probabilistic compliance forecast across the action lifecycle */
+    complianceForecast?: ComplianceForecast;
+
+    /** Per-action resource and economic analysis used by risk scoring */
+    resourceAnalysis: {
+        computationalCostScore: number; // 0.0 to 1.0
+        estimatedFinancialExpenditureUSD: number;
+        bandwidthUtilizationMbps: number;
+        opportunityTradeoffScore: number; // 0.0 to 1.0
+        projectedOpportunityCostOfBlockingUSD: number;
+        economicEfficiencyScore: number; // 0.0 to 1.0
     };
 
     /** Metadata regarding the source agent */
