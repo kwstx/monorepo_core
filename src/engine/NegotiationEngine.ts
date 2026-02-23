@@ -41,14 +41,35 @@ export interface IdentityVerifier {
 
 export interface ReputationProvider {
   getScore(agentId: string): number;
+  getTrustThreshold?(agentId: string, budgetRequested: number): number;
+  getSynergyMultiplier?(agentA: string, agentB: string): number;
+  validateCommitmentPriority?(message: AgentCoordinationMessage): {
+    priority: 'HIGH' | 'NORMAL' | 'LOW';
+    requiresEscrow: boolean;
+  };
 }
 
 export interface BudgetProvider {
   getAvailableBudget(agentId: string, currency: string): number;
 }
 
+export interface SharedTreasuryProvider {
+  getAvailableTreasury(currency: string): number;
+  getReservedTreasury?(currency: string): number;
+}
+
+export interface DownstreamCostProvider {
+  getProjectedDownstreamCost(message: AgentCoordinationMessage): number;
+}
+
 export interface AuthorityProvider {
   hasPermission(agentId: string, permission: TransitionPermission): boolean;
+}
+
+export interface EconomicGuardrails {
+  minimumExpectedRoi?: number;
+  minimumNetValue?: number;
+  sharedTreasuryUtilizationLimit?: number;
 }
 
 export interface NegotiationEngineConfig {
@@ -57,6 +78,9 @@ export interface NegotiationEngineConfig {
   budgetProvider: BudgetProvider;
   authorityProvider: AuthorityProvider;
   minimumReputationScore: number;
+  sharedTreasuryProvider?: SharedTreasuryProvider;
+  downstreamCostProvider?: DownstreamCostProvider;
+  economicGuardrails?: EconomicGuardrails;
 }
 
 interface NegotiationSession {
@@ -68,12 +92,14 @@ export interface TransitionResult {
   accepted: boolean;
   state?: NegotiationState;
   reason?: string;
+  action?: 'ALLOW' | 'RENEGOTIATE' | 'BLOCK';
+  economicViolations?: string[];
 }
 
 export class NegotiationEngine {
   private readonly sessions = new Map<string, NegotiationSession>();
 
-  public constructor(private readonly config: NegotiationEngineConfig) {}
+  public constructor(private readonly config: NegotiationEngineConfig) { }
 
   public process(message: AgentCoordinationMessage): TransitionResult {
     const nextState = STATE_FROM_MESSAGE_TYPE[message.type];
@@ -102,7 +128,7 @@ export class NegotiationEngine {
 
     session.state = nextState;
     this.sessions.set(sessionId, session);
-    return { accepted: true, state: nextState };
+    return { accepted: true, state: nextState, action: 'ALLOW' };
   }
 
   public getState(sessionId: string): NegotiationState | null {
@@ -118,10 +144,17 @@ export class NegotiationEngine {
     }
 
     const reputation = this.config.reputationProvider.getScore(message.sender.id);
-    if (reputation < this.config.minimumReputationScore) {
+    const budget = message.content.resources.budget;
+
+    // Dynamic Trust Threshold
+    const minRep = this.config.reputationProvider.getTrustThreshold
+      ? this.config.reputationProvider.getTrustThreshold(message.sender.id, budget.amount)
+      : this.config.minimumReputationScore;
+
+    if (reputation < minRep) {
       return {
         accepted: false,
-        reason: `Reputation score ${reputation} is below required threshold ${this.config.minimumReputationScore}.`
+        reason: `Reputation score ${reputation.toFixed(2)} is below required threshold ${minRep.toFixed(2)} for this transaction.`
       };
     }
 
@@ -129,7 +162,8 @@ export class NegotiationEngine {
     if (budget.amount > budget.limit) {
       return {
         accepted: false,
-        reason: `Requested budget amount ${budget.amount} exceeds declared limit ${budget.limit}.`
+        reason: `Requested budget amount ${budget.amount} exceeds declared limit ${budget.limit}.`,
+        action: nextState === NegotiationState.FINAL_COMMITMENT ? 'BLOCK' : 'RENEGOTIATE'
       };
     }
 
@@ -140,8 +174,14 @@ export class NegotiationEngine {
     if (budget.amount > availableBudget) {
       return {
         accepted: false,
-        reason: `Requested budget amount ${budget.amount} exceeds available budget ${availableBudget}.`
+        reason: `Requested budget amount ${budget.amount} exceeds available budget ${availableBudget}.`,
+        action: nextState === NegotiationState.FINAL_COMMITMENT ? 'BLOCK' : 'RENEGOTIATE'
       };
+    }
+
+    const economicResult = this.validateEconomicViability(message, nextState);
+    if (economicResult) {
+      return economicResult;
     }
 
     const requiredPermission = REQUIRED_PERMISSION[nextState];
@@ -156,14 +196,100 @@ export class NegotiationEngine {
       const commitmentMetadata = message.metadata?.commitment as
         | { isFormal?: boolean; verificationToken?: string }
         | undefined;
+
       if (!commitmentMetadata?.isFormal || !commitmentMetadata?.verificationToken) {
         return {
           accepted: false,
           reason: 'Final commitment must be formal and include a verification token.'
         };
       }
+
+      // Commitment Priority and Validation
+      if (this.config.reputationProvider.validateCommitmentPriority) {
+        const priorityInfo = this.config.reputationProvider.validateCommitmentPriority(message);
+        if (priorityInfo.requiresEscrow && !message.metadata?.escrowId) {
+          return {
+            accepted: false,
+            reason: `Low reputation agent "${message.sender.id}" requires an Escrow ID for final commitment.`
+          };
+        }
+      }
     }
 
-    return { accepted: true, state: nextState };
+    return { accepted: true, state: nextState, action: 'ALLOW' };
+  }
+
+  private validateEconomicViability(
+    message: AgentCoordinationMessage,
+    nextState: NegotiationState
+  ): TransitionResult | null {
+    const violations: string[] = [];
+    const impact = message.content.impact;
+    const budget = message.content.resources.budget;
+    const guardrails = this.config.economicGuardrails;
+
+    let minRoi = guardrails?.minimumExpectedRoi;
+
+    // Synergy Influence on Weighting
+    if (minRoi !== undefined && this.config.reputationProvider.getSynergyMultiplier) {
+      const multiplier = this.config.reputationProvider.getSynergyMultiplier(
+        message.sender.id,
+        message.recipient.id
+      );
+      // High synergy can lower the required ROI threshold (more tolerant of lower ROI if synergy is high)
+      if (multiplier > 1.0) {
+        minRoi = minRoi / multiplier;
+      }
+    }
+
+    if (minRoi !== undefined && impact.predictedRoi < minRoi) {
+      violations.push(
+        `Predicted ROI ${impact.predictedRoi} is below minimum required ${minRoi.toFixed(2)} (adjusted for synergy).`
+      );
+    }
+
+    if (guardrails?.minimumNetValue !== undefined && impact.netValue < guardrails.minimumNetValue) {
+      violations.push(
+        `Projected net value ${impact.netValue} is below minimum required ${guardrails.minimumNetValue}.`
+      );
+    }
+
+    if (this.config.sharedTreasuryProvider) {
+      const availableTreasury = this.config.sharedTreasuryProvider.getAvailableTreasury(budget.currency);
+      const reservedTreasury = this.config.sharedTreasuryProvider.getReservedTreasury?.(budget.currency) ?? 0;
+      const utilizationLimit = guardrails?.sharedTreasuryUtilizationLimit ?? 1;
+      const usableTreasury = Math.max(0, availableTreasury * utilizationLimit - reservedTreasury);
+
+      if (budget.amount > usableTreasury) {
+        violations.push(
+          `Requested amount ${budget.amount} exceeds shared treasury capacity ${usableTreasury} (${budget.currency}).`
+        );
+      }
+    }
+
+    if (this.config.downstreamCostProvider) {
+      const downstreamCost = this.config.downstreamCostProvider.getProjectedDownstreamCost(message);
+      const totalProjectedCost = impact.estimatedCost + downstreamCost;
+
+      if (totalProjectedCost > budget.limit) {
+        violations.push(
+          `Total projected cost ${totalProjectedCost} exceeds budget limit ${budget.limit} after downstream costs.`
+        );
+      }
+    }
+
+    if (violations.length === 0) {
+      return null;
+    }
+
+    const shouldBlock = nextState === NegotiationState.FINAL_COMMITMENT;
+    return {
+      accepted: false,
+      reason: shouldBlock
+        ? `Execution blocked due to economic limits: ${violations.join(' ')}`
+        : `Renegotiation required due to economic limits: ${violations.join(' ')}`,
+      action: shouldBlock ? 'BLOCK' : 'RENEGOTIATE',
+      economicViolations: violations
+    };
   }
 }

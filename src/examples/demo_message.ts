@@ -5,9 +5,11 @@ import {
 import {
     AuthorityProvider,
     BudgetProvider,
+    DownstreamCostProvider,
     IdentityVerifier,
     NegotiationEngine,
     ReputationProvider,
+    SharedTreasuryProvider,
     TransitionPermission
 } from '../engine/NegotiationEngine';
 
@@ -125,13 +127,44 @@ const authorityProvider: AuthorityProvider = {
     }
 };
 
-const engine = new NegotiationEngine({
+const sharedTreasuryProvider: SharedTreasuryProvider = {
+    getAvailableTreasury(currency: string): number {
+        const treasuryByCurrency: Record<string, number> = {
+            USDT: 900
+        };
+        return treasuryByCurrency[currency] ?? 0;
+    },
+    getReservedTreasury(currency: string): number {
+        const reservedByCurrency: Record<string, number> = {
+            USDT: 350
+        };
+        return reservedByCurrency[currency] ?? 0;
+    }
+};
+
+const downstreamCostProvider: DownstreamCostProvider = {
+    getProjectedDownstreamCost(message: AgentCoordinationMessage): number {
+        const base = message.content.impact.estimatedCost;
+        return base * 0.35;
+    }
+};
+
+const engineConfig = {
     identityVerifier,
     reputationProvider,
     budgetProvider,
     authorityProvider,
-    minimumReputationScore: 0.75
-});
+    minimumReputationScore: 0.75,
+    sharedTreasuryProvider,
+    downstreamCostProvider,
+    economicGuardrails: {
+        minimumExpectedRoi: 1.2,
+        minimumNetValue: 100,
+        sharedTreasuryUtilizationLimit: 0.85
+    }
+};
+
+const engine = new NegotiationEngine(engineConfig);
 
 const proposal: AgentCoordinationMessage = {
     ...collaborationOffer,
@@ -193,8 +226,62 @@ const verifiedFinalCommitment: AgentCoordinationMessage = {
     }
 };
 
+const lowRoiProposal: AgentCoordinationMessage = {
+    ...proposal,
+    messageId: 'msg_8842af16',
+    correlationId: 'tx_low_roi_case',
+    content: {
+        ...proposal.content,
+        impact: {
+            ...proposal.content.impact,
+            predictedRoi: 0.9
+        }
+    }
+};
+
+const blockProposal: AgentCoordinationMessage = {
+    ...proposal,
+    correlationId: 'tx_block_case'
+};
+
+const blockCounterproposal: AgentCoordinationMessage = {
+    ...counterproposal,
+    messageId: 'msg_8842af17',
+    correlationId: 'tx_block_case'
+};
+
+const blockTentativeAgreement: AgentCoordinationMessage = {
+    ...tentativeAgreement,
+    messageId: 'msg_8842af18',
+    correlationId: 'tx_block_case'
+};
+
+const overBudgetCommitment: AgentCoordinationMessage = {
+    ...verifiedFinalCommitment,
+    messageId: 'msg_8842af19',
+    correlationId: 'tx_block_case',
+    content: {
+        ...verifiedFinalCommitment.content,
+        resources: {
+            ...verifiedFinalCommitment.content.resources,
+            budget: {
+                ...verifiedFinalCommitment.content.resources.budget,
+                amount: 850,
+                limit: 860
+            }
+        }
+    }
+};
+
+const blockedEngine = new NegotiationEngine(engineConfig);
+
+console.log('LOW ROI PROPOSAL =>', engine.process(lowRoiProposal));
 console.log('PROPOSAL =>', engine.process(proposal));
 console.log('COUNTERPROPOSAL =>', engine.process(counterproposal));
 console.log('TENTATIVE AGREEMENT =>', engine.process(tentativeAgreement));
 console.log('UNVERIFIED FINAL COMMITMENT =>', engine.process(unverifiedCommitment));
 console.log('VERIFIED FINAL COMMITMENT =>', engine.process(verifiedFinalCommitment));
+console.log('BLOCK FLOW PROPOSAL =>', blockedEngine.process(blockProposal));
+console.log('BLOCK FLOW COUNTERPROPOSAL =>', blockedEngine.process(blockCounterproposal));
+console.log('BLOCK FLOW TENTATIVE AGREEMENT =>', blockedEngine.process(blockTentativeAgreement));
+console.log('OVER-BUDGET FINAL COMMITMENT =>', blockedEngine.process(overBudgetCommitment));
