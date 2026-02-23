@@ -8,6 +8,7 @@ import {
     PolicyValidationLayer,
     PolicyViolation
 } from './PolicyValidationLayer';
+import type { ComputeAllocationPlan } from './ProposalPrioritizationEngine';
 
 /**
  * SandboxEvaluationEngine
@@ -25,7 +26,10 @@ export class SandboxEvaluationEngine {
      * @param proposal The proposal to evaluate.
      * @returns A promise that resolves to the simulation result.
      */
-    public async evaluate(proposal: SelfModificationProposal): Promise<SimulationResult> {
+    public async evaluate(
+        proposal: SelfModificationProposal,
+        allocationPlan?: ComputeAllocationPlan
+    ): Promise<SimulationResult> {
         const logs: string[] = [];
         const policyValidation = this.policyValidationLayer.validate(proposal);
 
@@ -55,9 +59,14 @@ export class SandboxEvaluationEngine {
 
         logs.push(`[${new Date().toISOString()}] Starting sandbox simulation for proposal: ${proposal.id}`);
         logs.push(`[${new Date().toISOString()}] Initializing isolated environment...`);
+        if (allocationPlan) {
+            logs.push(
+                `[${new Date().toISOString()}] [SCHEDULER] Compute tier=${allocationPlan.tier} cpu=${allocationPlan.cpuCores} memoryMb=${allocationPlan.memoryMb} maxRuntimeMs=${allocationPlan.maxRuntimeMs}`
+            );
+        }
 
         // Simulate environment isolation
-        await this.delay(500);
+        await this.delay(this.scaledDelay(500, allocationPlan));
         logs.push(`[${new Date().toISOString()}] [ISOLATION] Virtual filesystem mounted. Network restricted. CPU pinning active.`);
 
         logs.push(`[${new Date().toISOString()}] [DEPLOYMENT] Applying proposed change to target module: ${proposal.targetModule}`);
@@ -67,7 +76,7 @@ export class SandboxEvaluationEngine {
 
         // Simulate test execution
         logs.push(`[${new Date().toISOString()}] [EXECUTION] Running initial sanity checks...`);
-        await this.delay(300);
+        await this.delay(this.scaledDelay(300, allocationPlan));
 
         // Evaluate Downstream Effects
         logs.push(`[${new Date().toISOString()}] [EVALUATION] Analyzing downstream effects on dependent systems...`);
@@ -122,6 +131,15 @@ export class SandboxEvaluationEngine {
 
     private delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    private scaledDelay(baseMs: number, allocationPlan?: ComputeAllocationPlan): number {
+        if (!allocationPlan) {
+            return baseMs;
+        }
+
+        const normalizedCpuFactor = Math.max(1, allocationPlan.cpuCores) / 2;
+        return Math.max(50, Math.round(baseMs / normalizedCpuFactor));
     }
 
     private buildViolationLogs(violations: PolicyViolation[]): string[] {

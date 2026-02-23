@@ -71,6 +71,7 @@ async function demo() {
             rationale: "Approved for demo."
         }))
     ];
+    const proposalsById = new Map<string, SelfModificationProposal>();
 
     // 1. Create a safe incremental proposal
     const incrementalProposal = new SelfModificationProposal({
@@ -92,6 +93,7 @@ async function demo() {
             strategicAlignmentScore: 0.9
         }
     });
+    proposalsById.set(incrementalProposal.id, incrementalProposal);
 
     console.log(`[SUBMISSION] Submitting Proposal ${incrementalProposal.id}...`);
     submissionEngine.submit({
@@ -106,8 +108,14 @@ async function demo() {
     let processed;
     while ((processed = submissionEngine.dequeueForEvaluation())) {
         console.log(`[VALIDATION] Proposal ${processed.proposalId} cleared for evaluation.`);
-        const targetProposal = incrementalProposal;
-        const result = await evaluationEngine.evaluate(targetProposal);
+        console.log(
+            `[PRIORITY] score=${processed.prioritization.priorityScore.toFixed(3)} tier=${processed.prioritization.computeAllocationPlan.tier}`
+        );
+        const targetProposal = proposalsById.get(processed.proposalId);
+        if (!targetProposal) {
+            continue;
+        }
+        const result = await evaluationEngine.evaluate(targetProposal, processed.prioritization.computeAllocationPlan);
 
         console.log(`[SANDBOX] Simulation Result success: ${result.success}`);
         if (result.success) {
@@ -153,6 +161,7 @@ async function demo() {
             strategicAlignmentScore: 0.8
         }
     });
+    proposalsById.set(failingProposal.id, failingProposal);
 
     console.log(`[SUBMISSION] Submitting Proposal ${failingProposal.id}...`);
     submissionEngine.submit({
@@ -164,7 +173,14 @@ async function demo() {
     const entry = submissionEngine.dequeueForEvaluation();
     if (entry) {
         console.log(`[VALIDATION] Proposal ${entry.proposalId} cleared for evaluation.`);
-        const simResult = await evaluationEngine.evaluate(failingProposal);
+        console.log(
+            `[PRIORITY] score=${entry.prioritization.priorityScore.toFixed(3)} tier=${entry.prioritization.computeAllocationPlan.tier}`
+        );
+        const targetProposal = proposalsById.get(entry.proposalId);
+        if (!targetProposal) {
+            return;
+        }
+        const simResult = await evaluationEngine.evaluate(targetProposal, entry.prioritization.computeAllocationPlan);
         console.log(`[SANDBOX] Simulation Result success: ${simResult.success}`);
 
         if (simResult.success) {

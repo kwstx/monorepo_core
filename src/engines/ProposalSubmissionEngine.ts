@@ -14,6 +14,10 @@ import {
     PolicyViolation
 } from './PolicyValidationLayer';
 import { SelfImprovementFeedbackLoop } from './SelfImprovementFeedbackLoop';
+import {
+    ProposalPrioritizationEngine,
+    ProposalPrioritizationRecord
+} from './ProposalPrioritizationEngine';
 
 export enum SubmissionFailureCode {
     INVALID_PROPOSAL = 'INVALID_PROPOSAL',
@@ -56,6 +60,7 @@ export interface ProposalQueueEntry {
     agentIdentity: string;
     queuedAt: Date;
     payloadDigest: string;
+    prioritization: ProposalPrioritizationRecord;
     proposalSnapshot: Readonly<ProposalSnapshot>;
 }
 
@@ -96,7 +101,8 @@ export class ProposalSubmissionEngine {
         private readonly signatureVerifier: SignatureVerifier,
         private readonly assessmentEngine: ImpactAssessmentEngine = new ImpactAssessmentEngine(),
         private readonly policyValidationLayer: PolicyValidationLayer = new PolicyValidationLayer(),
-        private readonly feedbackLoop?: SelfImprovementFeedbackLoop
+        private readonly feedbackLoop?: SelfImprovementFeedbackLoop,
+        private readonly prioritizationEngine: ProposalPrioritizationEngine = new ProposalPrioritizationEngine()
     ) { }
 
     submit(envelope: SubmissionEnvelope): ProposalQueueEntry {
@@ -137,6 +143,7 @@ export class ProposalSubmissionEngine {
         // Perform impact assessment before queuing
         const assessment = this.assessmentEngine.assess(proposal);
         proposal.updateImpactAssessment(assessment);
+        const prioritization = this.prioritizationEngine.rank(proposal);
 
         const queueEntry: ProposalQueueEntry = {
             queueId: this.buildQueueId(proposal.id),
@@ -144,6 +151,7 @@ export class ProposalSubmissionEngine {
             agentIdentity: proposal.agentIdentity,
             queuedAt: new Date(),
             payloadDigest: envelope.payloadDigest,
+            prioritization,
             proposalSnapshot: this.createImmutableSnapshot(proposal)
         };
 
@@ -153,14 +161,23 @@ export class ProposalSubmissionEngine {
     }
 
     getQueueSnapshot(): readonly ProposalQueueEntry[] {
-        return this.queue.map((entry) => ({
-            ...entry,
-            queuedAt: new Date(entry.queuedAt.getTime())
-        }));
+        return this.queue
+            .map((entry) => ({
+                ...entry,
+                queuedAt: new Date(entry.queuedAt.getTime()),
+                prioritization: {
+                    ...entry.prioritization,
+                    breakdown: { ...entry.prioritization.breakdown },
+                    computeAllocationPlan: { ...entry.prioritization.computeAllocationPlan },
+                    rankedAt: new Date(entry.prioritization.rankedAt.getTime())
+                }
+            }))
+            .sort((left, right) => this.compareQueueEntries(left, right));
     }
 
     dequeueForEvaluation(): ProposalQueueEntry | null {
         while (this.queue.length > 0) {
+            this.queue.sort((left, right) => this.compareQueueEntries(left, right));
             const next = this.queue.shift()!;
             const validation = this.policyValidationLayer.validate(next.proposalSnapshot);
 
@@ -181,6 +198,10 @@ export class ProposalSubmissionEngine {
         }
 
         return null;
+    }
+
+    getOptimizedEvaluationOrder(): readonly ProposalQueueEntry[] {
+        return this.getQueueSnapshot();
     }
 
     getPolicyRejections(): readonly RejectedProposalRecord[] {
@@ -322,6 +343,14 @@ export class ProposalSubmissionEngine {
                 }
                 : null
         });
+    }
+
+    private compareQueueEntries(left: ProposalQueueEntry, right: ProposalQueueEntry): number {
+        if (left.prioritization.priorityScore !== right.prioritization.priorityScore) {
+            return right.prioritization.priorityScore - left.prioritization.priorityScore;
+        }
+
+        return left.queuedAt.getTime() - right.queuedAt.getTime();
     }
 }
 
