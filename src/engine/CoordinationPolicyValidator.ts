@@ -90,7 +90,7 @@ export class CoordinationPolicyValidator {
         if (rules.maxBudget !== undefined && resources.budget.amount > rules.maxBudget) {
             violations.push({
                 policyId,
-                ruleId: 'ECON_MAX_BUDget',
+                ruleId: 'ECON_MAX_BUDGET',
                 severity: ViolationSeverity.MODIFY,
                 message: `Budget ${resources.budget.amount} exceeds policy cap of ${rules.maxBudget}. Clipping to limit.`,
                 suggestedValue: rules.maxBudget,
