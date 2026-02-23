@@ -6,6 +6,7 @@ import {
     ExecutionStep,
     InProcessMonitorPolicy
 } from '../../core/models';
+import { ViolationPropagationModule } from '../../core/violation-propagation';
 
 export interface AnomalyDetectionDecision {
     deviationScore: number;
@@ -18,6 +19,7 @@ export interface AnomalyDetectionDecision {
 export class AnomalyDetectionEngine {
     private readonly thresholds: AnomalyToleranceThresholds;
     private readonly actionDelayMs: number;
+    private propagationModule: ViolationPropagationModule;
 
     constructor(thresholds?: Partial<AnomalyToleranceThresholds>, actionDelayMs: number = 250) {
         this.thresholds = {
@@ -27,6 +29,7 @@ export class AnomalyDetectionEngine {
             halt: thresholds?.halt ?? 0.8
         };
         this.actionDelayMs = actionDelayMs;
+        this.propagationModule = ViolationPropagationModule.getInstance();
     }
 
     public async enforceDelayIfNeeded(action: AnomalyMitigationAction): Promise<void> {
@@ -57,17 +60,32 @@ export class AnomalyDetectionEngine {
     }
 
     private resolveAction(score: number): { action: AnomalyMitigationAction, threshold: number | null } {
-        if (score >= this.thresholds.halt) {
-            return { action: 'HALT', threshold: this.thresholds.halt };
+        const { thresholdTightness } = this.propagationModule.getPropagationParameters();
+
+        // Apply tightness: higher tightness reduces the effective threshold
+        // e.g., if tightness is 0.5, a 0.8 threshold becomes 0.4
+        const adjust = (t: number) => Math.max(0.05, t * (1.0 - (thresholdTightness * 0.7)));
+
+        const tHalt = adjust(this.thresholds.halt);
+        const tApproval = adjust(this.thresholds.requireApproval);
+        const tSlow = adjust(this.thresholds.slow);
+        const tWarn = adjust(this.thresholds.warn);
+
+        if (thresholdTightness > 0) {
+            console.log(`[AnomalyDetectionEngine] Applying threshold tightness: ${thresholdTightness.toFixed(2)}. Adjusted HALT threshold: ${tHalt.toFixed(2)}`);
         }
-        if (score >= this.thresholds.requireApproval) {
-            return { action: 'REQUIRE_APPROVAL', threshold: this.thresholds.requireApproval };
+
+        if (score >= tHalt) {
+            return { action: 'HALT', threshold: tHalt };
         }
-        if (score >= this.thresholds.slow) {
-            return { action: 'SLOW', threshold: this.thresholds.slow };
+        if (score >= tApproval) {
+            return { action: 'REQUIRE_APPROVAL', threshold: tApproval };
         }
-        if (score >= this.thresholds.warn) {
-            return { action: 'WARN', threshold: this.thresholds.warn };
+        if (score >= tSlow) {
+            return { action: 'SLOW', threshold: tSlow };
+        }
+        if (score >= tWarn) {
+            return { action: 'WARN', threshold: tWarn };
         }
         return { action: 'NONE', threshold: null };
     }

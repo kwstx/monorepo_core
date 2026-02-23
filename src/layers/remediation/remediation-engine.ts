@@ -10,8 +10,15 @@ import {
     TrustRecalibration,
     ViolationSeverity
 } from '../../core/models';
+import { StabilityFeedbackConnector } from './stability-feedback-connector';
 
 export class RemediationEngine {
+    private readonly stabilityFeedbackConnector: StabilityFeedbackConnector;
+
+    constructor() {
+        this.stabilityFeedbackConnector = new StabilityFeedbackConnector();
+    }
+
     public async remediate(context: ActionContext): Promise<ActionContext> {
         const confirmedViolations = this.getConfirmedViolations(context);
         if (confirmedViolations.length === 0) {
@@ -24,6 +31,7 @@ export class RemediationEngine {
 
         const notifications = this.notifyStakeholders(context, confirmedViolations.length, rollbackTransactions);
         const trustRecalibration = this.recalibrateTrust(context, confirmedViolations.map(v => v.severity));
+        const stabilityFeedback = this.stabilityFeedbackConnector.apply(context, confirmedViolations);
 
         const report: RemediationReport = {
             actionId: context.actionId,
@@ -32,6 +40,7 @@ export class RemediationEngine {
             rollbackTransactions,
             notifications,
             trustRecalibration,
+            stabilityFeedback,
             safeRollback: rollbackTransactions.every(
                 tx => tx.status === 'APPLIED' || tx.status === 'SKIPPED'
             )

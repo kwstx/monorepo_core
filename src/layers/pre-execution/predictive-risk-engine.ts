@@ -1,6 +1,13 @@
 import { ActionContext, RiskProfile, SynergyShift, PropagationEffect, PolicyForecast, BehaviorVector } from '../../core/models';
+import { ViolationPropagationModule } from '../../core/violation-propagation';
 
 export class PredictiveRiskEngine {
+    private propagationModule: ViolationPropagationModule;
+
+    constructor() {
+        this.propagationModule = ViolationPropagationModule.getInstance();
+    }
+
     /**
      * Evaluates potential real-world consequences using projected synergy shifts, 
      * trust-weighted propagation effects, and policy impact forecasts.
@@ -135,6 +142,13 @@ export class PredictiveRiskEngine {
         policy.forEach(pf => {
             if (pf.complianceDelta < 0) score += Math.abs(pf.complianceDelta);
         });
+
+        // Apply propagation multiplier
+        const { riskMultiplier } = this.propagationModule.getPropagationParameters();
+        if (riskMultiplier > 1.0) {
+            console.log(`[PredictiveRiskEngine] Applying violation propagation risk multiplier: ${riskMultiplier.toFixed(2)}`);
+            score *= riskMultiplier;
+        }
 
         return Math.min(1.0, score);
     }

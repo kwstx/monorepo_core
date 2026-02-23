@@ -95,6 +95,49 @@ export interface TrustRecalibration {
     timestamp: Date;
 }
 
+export interface CooperativeIntelligenceMetrics {
+    violationPressure: number; // 0.0 to 1.0
+    stabilityAlignment: number; // 0.0 to 1.0
+    repeatViolationRate: number; // 0.0 to 1.0
+    influenceWeight: number; // 0.0 to 1.0
+}
+
+export interface TrustCalibrationPoint {
+    horizon: string;
+    trustCoefficient: number; // 0.0 to 1.0
+}
+
+export interface TrustCalibrationCurve {
+    points: TrustCalibrationPoint[];
+    slope: number;
+    confidence: number; // 0.0 to 1.0
+}
+
+export interface SynergyDensityForecast {
+    baselineDensity: number; // 0.0 to 1.0
+    projectedDensity: number; // 0.0 to 1.0
+    confidence: number; // 0.0 to 1.0
+    horizon: string;
+}
+
+export interface TaskFormationProbabilityMap {
+    autonomous: number;
+    cooperative: number;
+    supervised: number;
+}
+
+export interface StabilityFeedbackReport {
+    generatedAt: Date;
+    influenceWeightPrevious: number;
+    influenceWeightUpdated: number;
+    cooperativeMetrics: CooperativeIntelligenceMetrics;
+    trustCalibrationCurve: TrustCalibrationCurve;
+    synergyDensityForecasts: SynergyDensityForecast[];
+    taskFormationProbabilitiesBefore: TaskFormationProbabilityMap;
+    taskFormationProbabilitiesAfter: TaskFormationProbabilityMap;
+    repeatedViolationCount: number;
+}
+
 export interface RemediationReport {
     actionId: string;
     generatedAt: Date;
@@ -102,6 +145,7 @@ export interface RemediationReport {
     rollbackTransactions: RollbackTransaction[];
     notifications: StakeholderNotification[];
     trustRecalibration: TrustRecalibration;
+    stabilityFeedback?: StabilityFeedbackReport;
     safeRollback: boolean;
 }
 
@@ -205,6 +249,11 @@ export interface ActionContext {
     stakeholders?: Stakeholder[];
     trustCoefficient?: number;
     remediationReport?: RemediationReport;
+    cooperativeMetrics?: CooperativeIntelligenceMetrics;
+    trustCalibrationCurve?: TrustCalibrationCurve;
+    synergyDensityForecasts?: SynergyDensityForecast[];
+    influenceWeight?: number;
+    taskFormationProbabilities?: TaskFormationProbabilityMap;
 }
 
 export enum InterventionType {

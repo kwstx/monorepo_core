@@ -9,6 +9,7 @@ import {
 } from '../../core/models';
 import { EnforcementEventBus, EnforcementEvents } from '../../core/event-bus';
 import { AnomalyDetectionEngine } from './anomaly-detection-engine';
+import { ViolationPropagationModule } from '../../core/violation-propagation';
 
 export class InProcessMonitor {
     private context: ActionContext;
@@ -16,12 +17,14 @@ export class InProcessMonitor {
     private eventBus: EnforcementEventBus;
     private cumulativeSensitiveReads: number = 0;
     private anomalyEngine: AnomalyDetectionEngine;
+    private propagationModule: ViolationPropagationModule;
 
     constructor(context: ActionContext, policy: InProcessMonitorPolicy) {
         this.context = context;
         this.policy = policy;
         this.eventBus = EnforcementEventBus.getInstance();
         this.anomalyEngine = new AnomalyDetectionEngine(context.params['anomalyThresholds'], context.params['anomalySlowDelayMs']);
+        this.propagationModule = ViolationPropagationModule.getInstance();
 
         // Initialize cumulative reads from existing trace if any
         if (this.context.executionTrace) {
@@ -39,6 +42,7 @@ export class InProcessMonitor {
 
     public async recordStep(step: ExecutionStep): Promise<Violation[]> {
         const violations: Violation[] = [];
+        const { thresholdTightness } = this.propagationModule.getPropagationParameters();
 
         step.timestamp = step.timestamp || new Date();
         this.context.executionTrace!.push(step);
@@ -85,13 +89,22 @@ export class InProcessMonitor {
 
         // 4. Anomalous data access patterns
         if (step.dataAccess) {
+            // Tighten numerical thresholds if tightness is active
+            const maxRecordsAdjusted = thresholdTightness > 0
+                ? Math.ceil(this.policy.maxRecordsPerStep * (1.0 - (thresholdTightness * 0.5)))
+                : this.policy.maxRecordsPerStep;
+
+            const maxCumulativeAdjusted = thresholdTightness > 0
+                ? Math.ceil(this.policy.maxCumulativeSensitiveReads * (1.0 - (thresholdTightness * 0.5)))
+                : this.policy.maxCumulativeSensitiveReads;
+
             for (const access of step.dataAccess) {
-                if (access.recordCount && access.recordCount > this.policy.maxRecordsPerStep) {
+                if (access.recordCount && access.recordCount > maxRecordsAdjusted) {
                     violations.push(this.createViolation(
                         ViolationCategory.ANOMALY,
                         ViolationSeverity.MEDIUM,
-                        `Anomalous data access: Step exceeded maximum records per step (${access.recordCount} > ${this.policy.maxRecordsPerStep})`,
-                        { resource: access.resource, recordCount: access.recordCount }
+                        `Anomalous data access: Step exceeded ${thresholdTightness > 0 ? 'tightened ' : ''}maximum records per step (${access.recordCount} > ${maxRecordsAdjusted})`,
+                        { resource: access.resource, recordCount: access.recordCount, threshold: maxRecordsAdjusted }
                     ));
                 }
 
@@ -100,25 +113,29 @@ export class InProcessMonitor {
                 }
             }
 
-            if (this.cumulativeSensitiveReads > this.policy.maxCumulativeSensitiveReads) {
+            if (this.cumulativeSensitiveReads > maxCumulativeAdjusted) {
                 violations.push(this.createViolation(
                     ViolationCategory.ANOMALY,
                     ViolationSeverity.HIGH,
-                    `Anomalous data access: Cumulative sensitive reads exceeded threshold (${this.cumulativeSensitiveReads} > ${this.policy.maxCumulativeSensitiveReads})`,
-                    { cumulativeSensitiveReads: this.cumulativeSensitiveReads }
+                    `Anomalous data access: Cumulative sensitive reads exceeded ${thresholdTightness > 0 ? 'tightened ' : ''}threshold (${this.cumulativeSensitiveReads} > ${maxCumulativeAdjusted})`,
+                    { cumulativeSensitiveReads: this.cumulativeSensitiveReads, threshold: maxCumulativeAdjusted }
                 ));
             }
         }
 
         // 5. Cooperative instability signals
         if (step.cooperativeSignals) {
+            const minStabilityAdjusted = thresholdTightness > 0
+                ? Math.min(0.95, this.policy.minCooperativeStability + (thresholdTightness * 0.15))
+                : this.policy.minCooperativeStability;
+
             for (const signal of step.cooperativeSignals) {
-                if (signal.stabilityScore < this.policy.minCooperativeStability) {
+                if (signal.stabilityScore < minStabilityAdjusted) {
                     violations.push(this.createViolation(
                         ViolationCategory.IMPACT,
                         ViolationSeverity.MEDIUM,
-                        `Cooperative instability: Stability score for partner ${signal.partnerId} is too low (${signal.stabilityScore} < ${this.policy.minCooperativeStability})`,
-                        { partnerId: signal.partnerId, stabilityScore: signal.stabilityScore }
+                        `Cooperative instability: Stability score for partner ${signal.partnerId} is too low (${signal.stabilityScore} < ${minStabilityAdjusted.toFixed(2)})`,
+                        { partnerId: signal.partnerId, stabilityScore: signal.stabilityScore, threshold: minStabilityAdjusted }
                     ));
                 }
                 if (signal.conflictScore && signal.conflictScore > this.policy.maxCooperativeConflict) {
