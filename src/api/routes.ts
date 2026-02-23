@@ -58,6 +58,17 @@ router.post('/validate', async (req: Request, res: Response) => {
     }
 });
 
+// --- Pre-Negotiation Recommendation Endpoint ---
+
+router.post('/recommendations', async (req: Request, res: Response) => {
+    try {
+        const recommendations = await service.recommendCollaborations(req.body ?? {});
+        res.status(200).json(recommendations);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // --- Execution & Settlement Endpoints ---
 
 router.post('/execute/confirm', async (req: Request, res: Response) => {

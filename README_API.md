@@ -9,6 +9,7 @@ This service provides a standalone, API-driven interface for Agent-to-Agent (A2A
 - **Policy Validation**: Real-time checking of messages against economic, compliance, and governance rules.
 - **Conflict Resolution**: Detection and resolution of resource overlaps or contradictory task scopes.
 - **Settlement & Reputation**: Automated reward release, penalty application, and reputation updates.
+- **Predictive Pairing & Coalitions**: Pre-negotiation recommendation engine that ranks optimal agent pairs/coalitions using historical outcomes, synergy metrics, and economic performance.
 
 ## API Endpoints
 
@@ -22,6 +23,9 @@ This service provides a standalone, API-driven interface for Agent-to-Agent (A2A
 
 ### Validation
 - `POST /api/v1/validate`: Validate a message against active coordination policies.
+
+### Strategic Recommendations
+- `POST /api/v1/recommendations`: Get ranked agent pairings/coalitions before negotiation starts.
 
 ### Execution & Settlement
 - `POST /api/v1/execute/confirm`: Confirm task completion and trigger settlement (budget/reputation).

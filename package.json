@@ -6,6 +6,7 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "demo": "ts-node src/examples/reputation_demo.ts",
+        "demo:recommendations": "ts-node src/examples/demo_recommendations.ts",
         "start": "ts-node src/api/app.ts"
     },
     "devDependencies": {

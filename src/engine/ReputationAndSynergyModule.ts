@@ -139,4 +139,27 @@ export class ReputationAndSynergyModule implements ReputationProvider {
         existing.compatibilityScore = (existing.compatibilityScore + compatibility) / 2;
         this.synergyLinks.set(key, existing);
     }
+
+    /**
+     * Snapshot of historical records for downstream analytics modules.
+     */
+    public getHistorySnapshot(): CollaborationRecord[] {
+        return [...this.history];
+    }
+
+    /**
+     * Snapshot of known pairwise synergy links.
+     */
+    public getSynergySnapshot(): SynergyMetrics[] {
+        return Array.from(this.synergyLinks.values()).map(link => ({ ...link }));
+    }
+
+    /**
+     * Returns all known agents from history and synergy data.
+     */
+    public getKnownAgents(): string[] {
+        const fromHistory = this.history.map(record => record.agentId);
+        const fromSynergy = Array.from(this.synergyLinks.values()).flatMap(link => [link.agentA, link.agentB]);
+        return Array.from(new Set([...fromHistory, ...fromSynergy]));
+    }
 }

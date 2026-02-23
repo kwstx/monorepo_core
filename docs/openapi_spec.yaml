@@ -72,6 +72,24 @@ paths:
         '200':
           description: Validation results
 
+  /recommendations:
+    post:
+      summary: Recommend pre-negotiation agent pairings or coalitions
+      description: Ranks candidate pairs/coalitions using historical outcomes, synergy links, and economic performance.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationRequest'
+      responses:
+        '200':
+          description: Ranked collaboration recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+
   /execute/confirm:
     post:
       summary: Confirm task execution and trigger settlement
@@ -156,3 +174,52 @@ components:
         name: { type: string }
         actualValue: { type: oneOf: [{ type: string }, { type: number }] }
         evidence: { type: string }
+
+    RecommendationRequest:
+      type: object
+      properties:
+        candidateAgents:
+          type: array
+          items:
+            type: string
+        maxCoalitionSize:
+          type: integer
+          minimum: 2
+          maximum: 10
+        topK:
+          type: integer
+          minimum: 1
+          maximum: 50
+
+    RecommendationResponse:
+      type: object
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoalitionRecommendation'
+
+    CoalitionRecommendation:
+      type: object
+      properties:
+        agents:
+          type: array
+          items:
+            type: string
+        predictedSuccessScore:
+          type: number
+        predictedEconomicScore:
+          type: number
+        predictedSynergyScore:
+          type: number
+        predictedCollectiveImpact:
+          type: number
+        confidence:
+          type: number
+        rationale:
+          type: array
+          items:
+            type: string
