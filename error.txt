@@ -1,0 +1,43 @@
+﻿node.exe : C:\Users\galan\ec
+onomic_autonomy\src\Treasury
+Engine.ts:2
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\U
+sers\galan\AppData\Roaming\ 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (C:\Us  
+  ers\galan\...suryEngine   
+ .ts:2:String) [], Remot    
+eException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+import { PnLTracker, 
+ActionPnLInput } from 
+'./PnLTracker.js';
+                     ^
+SyntaxError: The requested 
+module './PnLTracker.js' 
+does not provide an export 
+named 'ActionPnLInput'
+    at 
+ModuleJob._instantiate (node
+:internal/modules/esm/module
+_job:226:21)
+    at async ModuleJob.run (
+node:internal/modules/esm/mo
+dule_job:335:5)
+    at async onImport.traceP
+romise.__proto__ (node:inter
+nal/modules/esm/loader:665:2
+6)
+    at async asyncRunEntryPo
+intWithESMLoader (node:inter
+nal/modules/run_main:117:5)
+
+Node.js v22.21.0
