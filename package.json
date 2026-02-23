@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:api": "node --loader ts-node/esm src/BudgetPnLAPI.ts"
+    "start:api": "node --loader ts-node/esm src/platform/api/server.ts"
   },
   "keywords": [],
   "author": "",
