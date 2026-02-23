@@ -1,6 +1,7 @@
 import type { AgentBudget } from './models/AgentBudget.js';
 import { PreExecutionBudgetGate, type ProposedAgentAction } from './PreExecutionBudgetGate.js';
 import { DynamicBudgetEngine, type RecalibrationInput } from './DynamicBudgetEngine.js';
+import { PnLTracker } from './PnLTracker.js';
 
 /**
  * Example usage of the AgentBudget data model.
@@ -121,6 +122,9 @@ exampleAgentBudget.allocations.forEach(alloc => {
 });
 console.log(`Revision History count: ${exampleAgentBudget.revisionHistory.length}`);
 console.log('\n--- PreExecutionBudgetGate Demo ---');
+const pnlTracker = new PnLTracker({
+    hmacSecret: 'demo-secret-shared-with-auditors'
+});
 
 for (const action of proposedActions) {
     const result = PreExecutionBudgetGate(exampleAgentBudget, action, {
@@ -133,9 +137,47 @@ for (const action of proposedActions) {
 
     console.log(`${action.actionId} (${action.actionType}) => ${result.decision.toUpperCase()}`);
     console.log(` Reasons: ${result.reasons.join(' | ')}`);
+
+    if (result.decision === 'allow' || result.decision === 'flag') {
+        const totalCooperativeSupport = (action.cooperativeContributions ?? []).reduce((sum, item) => sum + (item.amount * item.confidence), 0);
+        const expectedDownstreamBenefit = (action.predictedDownstreamImpact ?? []).reduce(
+            (sum, item) => sum + (item.expectedBenefit * item.probability),
+            0
+        );
+
+        const logEntry = pnlTracker.recordExecutedAction({
+            actionId: action.actionId,
+            agentId: action.agentId,
+            actionType: action.actionType,
+            status: 'executed',
+            revenue: (action.projectedReturn ?? 0) + expectedDownstreamBenefit,
+            directCosts: action.estimatedCost,
+            opportunityCosts: Math.max(0, (action.projectedReturn ?? 0) * 0.05),
+            cooperativeContributions: (action.cooperativeContributions ?? []).map((c) => ({
+                projectId: c.notes ?? `shared-${c.contributorAgentId}`,
+                contributionValue: c.amount * c.confidence,
+                notes: `Contributor: ${c.contributorAgentId}`
+            })),
+            longTermStrategicImpact: totalCooperativeSupport * 0.2,
+            metadata: {
+                gateDecision: result.decision,
+                utilizationAfterAction: result.allocationSnapshot.utilizationAfterAction
+            }
+        });
+
+        console.log(` PnL entry: ${logEntry.entryId}, hash=${logEntry.payloadHash.slice(0, 12)}...`);
+    }
 }
 
 console.log('-------------------------------');
+console.log('\n--- PnLTracker Verification Demo ---');
+const ledgerVerification = pnlTracker.verifyLedger();
+console.log(`Ledger valid: ${ledgerVerification.valid} (entries checked: ${ledgerVerification.checkedEntries})`);
+for (const entry of pnlTracker.getLedger()) {
+    console.log(
+        ` - ${entry.entryId}: agent=${entry.agentId}, action=${entry.actionId}, revenue=${entry.revenue}, totalCosts=${entry.totalCosts}, netPnL=${entry.netPnL}`
+    );
+}
 
 console.log('\n--- DynamicBudgetEngine Recalibration Demo ---');
 
