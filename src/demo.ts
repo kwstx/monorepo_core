@@ -1,7 +1,9 @@
-import { SelfModificationProposal, ProposalType } from './models/SelfModificationProposal';
+import { SelfModificationProposal, ProposalType, ProposalStatus } from './models/SelfModificationProposal';
 import { SandboxEvaluationEngine } from './engines/SandboxEvaluationEngine';
 import { ProposalSubmissionEngine, SubmissionEnvelope, AgentIdentityRegistry, DigestProvider, SignatureVerifier } from './engines/ProposalSubmissionEngine';
 import { ImpactAssessmentEngine } from './engines/ImpactAssessmentEngine';
+import { ConsensusEngine, VotingAgent } from './engines/ConsensusEngine';
+import { RsaSignatureProvider, VersionControlEngine } from './engines/VersionControlEngine';
 
 // Mock implementations for the demo
 class MockIdentityRegistry implements AgentIdentityRegistry {
@@ -23,6 +25,25 @@ class MockSignatureVerifier implements SignatureVerifier {
     }
 }
 
+class MockVotingAgent implements VotingAgent {
+    constructor(
+        public id: string,
+        public weight: number,
+        private decisionLogic: (p: SelfModificationProposal) => { approved: boolean; rationale: string }
+    ) { }
+
+    async evaluate(proposal: SelfModificationProposal) {
+        const decision = this.decisionLogic(proposal);
+        return {
+            predictedImpact: 0.7 + Math.random() * 0.3,
+            cooperationValue: 0.6 + Math.random() * 0.4,
+            taskAlignment: 0.8 + Math.random() * 0.2,
+            approved: decision.approved,
+            rationale: decision.rationale
+        };
+    }
+}
+
 async function demo() {
     console.log("--- Self-Improvement Governance: Impact Assessment Demo ---\n");
 
@@ -34,6 +55,24 @@ async function demo() {
         new MockSignatureVerifier(),
         assessmentEngine
     );
+
+    const consensusEngine = new ConsensusEngine({ threshold: 0.75, requiredApprovals: 2 });
+    const versionControlEngine = new VersionControlEngine(RsaSignatureProvider.generate('Governance-Signer-1'));
+
+    const votingAgents: VotingAgent[] = [
+        new MockVotingAgent("Agent-Observer-A", 1.0, (p) => ({
+            approved: p.impactAssessment!.riskScore < 0.4,
+            rationale: "Risk looks manageable."
+        })),
+        new MockVotingAgent("Agent-Observer-B", 1.5, (p) => ({
+            approved: p.governanceMetadata.strategicAlignmentScore > 0.7,
+            rationale: "Good strategic alignment."
+        })),
+        new MockVotingAgent("Agent-Policy-Enforcer", 2.0, (p) => ({
+            approved: p.type === ProposalType.INCREMENTAL,
+            rationale: "Incremental changes are preferred."
+        }))
+    ];
 
     // 1. Create a safe incremental proposal
     const incrementalProposal = new SelfModificationProposal({
@@ -118,8 +157,62 @@ async function demo() {
 
         // Simulate Sandbox Evaluation for cleared proposals
         console.log(`[SANDBOX] Running simulation for ${processed.proposalId}...`);
-        const result = await evaluationEngine.evaluate(incrementalProposal); // Use actual proposal object in real case
+        const targetProposal = processed.proposalId === incrementalProposal.id ? incrementalProposal : riskyProposal;
+        const result = await evaluationEngine.evaluate(targetProposal);
         console.log(`[SANDBOX] Result: ${result.success ? 'SUCCESS' : 'FAILURE'}`);
+
+        if (result.success) {
+            console.log(`[CONSENSUS] Gathering votes for ${processed.proposalId}...`);
+            const consensus = await consensusEngine.collectConsensus(targetProposal, votingAgents);
+
+            console.log(`[CONSENSUS] Reached: ${consensus.consensusReached ? 'YES' : 'NO'}`);
+            console.log(`  - Weighted Score: ${consensus.weightedConsensusScore.toFixed(3)}`);
+            console.log(`  - Approvals: ${consensus.approvals}/${consensus.totalAgents}`);
+            console.log(`  - Average Alignment: ${consensus.averageAlignment.toFixed(2)}`);
+
+            if (consensus.consensusReached) {
+                targetProposal.status = ProposalStatus.APPROVED;
+                console.log(`[GOVERNANCE] Proposal ${processed.proposalId} is APPROVED for execution.`);
+                const version = versionControlEngine.recordApprovedModification({
+                    proposal: targetProposal,
+                    createdBy: 'GovernanceController',
+                    approvalReference: `approval-${processed.proposalId}-${Date.now()}`,
+                    preExecutionMetrics: {
+                        baselinePerformance: 1.0,
+                        baselineResourceUsage: 1.0,
+                        baselineStability: 0.98,
+                        observedAt: new Date()
+                    },
+                    sandboxOutcome: {
+                        success: result.success,
+                        performanceDelta: result.performanceDelta,
+                        resourceUsageDelta: result.resourceUsageDelta,
+                        stabilityScore: result.stabilityScore,
+                        metrics: { ...result.metrics },
+                        evaluatedAt: new Date()
+                    },
+                    consensusResult: {
+                        totalAgents: consensus.totalAgents,
+                        approvals: consensus.approvals,
+                        disapprovals: consensus.disapprovals,
+                        abstentions: consensus.abstentions,
+                        weightedConsensusScore: consensus.weightedConsensusScore,
+                        consensusReached: consensus.consensusReached,
+                        decidedAt: new Date()
+                    },
+                    economicImpact: {
+                        approvedBudget: targetProposal.economicConstraints.budgetLimit,
+                        predictedEconomicCost: targetProposal.impactAssessment?.predictedEconomicCost ?? 0,
+                        projectedROI: targetProposal.impactAssessment?.projectedROI ?? 0,
+                        expectedPaybackCycles: 3
+                    }
+                });
+                console.log(`[VERSION] Created immutable record ${version.versionId} (hash=${version.payloadHash.slice(0, 12)}...)`);
+            } else {
+                targetProposal.status = ProposalStatus.REJECTED;
+                console.log(`[GOVERNANCE] Proposal ${processed.proposalId} REJECTED due to lack of consensus.`);
+            }
+        }
     }
 
     const rejections = submissionEngine.getPolicyRejections();
@@ -127,6 +220,12 @@ async function demo() {
     rejections.forEach(r => {
         console.log(`  - Proposal ${r.proposalId} rejected at ${r.rejectedAt.toLocaleTimeString()}`);
         r.violations.forEach(v => console.log(`    [VIOLATION] [${v.domain}] ${v.message}`));
+    });
+
+    const versionAudit = versionControlEngine.queryVersions();
+    console.log(`\n[VERSION-AUDIT] Stored immutable versions: ${versionAudit.length}`);
+    versionAudit.forEach((record) => {
+        console.log(`  - ${record.versionId} proposal=${record.proposalId} signedBy=${record.signerId}`);
     });
 
     console.log("\n--- Demo Completed ---");
