@@ -1,40 +1,27 @@
 ﻿--- Self-Improvement Governance: Impact Assessment Demo ---
 
 [SUBMISSION] Submitting Proposal PROP-001...
-[ASSESSMENT] Impact Assessment for PROP-001:
-  - Risk Score: 0.14
-  - Predicted Cost: $1075.26
-  - ROI: 120.0%
-  - Synergy (Efficiency): 0.30
-  - Recommendation: FLAG
-
-[SUBMISSION] Submitting Risky Proposal PROP-002...
-[ASSESSMENT] Impact Assessment for PROP-002:
-  - Risk Score: 0.86
-  - Recommendation: BLOCK
 
 [VALIDATION] Dequeuing and Validating Proposals...
-
-[REJECTION] Detected 2 policy rejections:
-  - Proposal PROP-001 rejected at 8:02:43 PM
-    [VIOLATION] [SAFETY] Impact assessment recommendation is FLAG (Requires Review). Risk Score: 0.14, ROI: 1.20
-  - Proposal PROP-002 rejected at 8:02:43 PM
-    [VIOLATION] [SAFETY] Impact assessment recommendation is BLOCK. Risk Score: 0.86, Predicted Cost: 4608.23
-    [VIOLATION] [SAFETY] Predicted risk 0.90 exceeds maximum 0.70.
-    [VIOLATION] [COMPLIANCE] Missing required compliance protocol AUDIT_LOGGING_V1.
-    [VIOLATION] [STRATEGIC_ALIGNMENT] Strategic alignment score 0.20 is below minimum 0.60.
-
-[VERSION-AUDIT] Stored immutable versions: 0
+[VALIDATION] Proposal PROP-001 cleared for evaluation.
+[SANDBOX] Simulation Result success: true
+[CONSENSUS] Reached: true
+[GOVERNANCE] Proposal PROP-001 EXECUTED and VERSIONED.
 
 --- 4. Rollback Engine Demo: Post-Execution Monitoring ---
 
 [SUBMISSION] Submitting Proposal PROP-003...
+[VALIDATION] Proposal PROP-003 cleared for evaluation.
+[SANDBOX] Simulation Result success: true
+[GOVERNANCE] Proposal PROP-003 EXECUTED.
+[ROLLBACK-ENGINE] Evaluating PROP-003...
+[ROLLBACK-ENGINE] ROLLBACK TRIGGERED for PROP-003!
+  - Reason: Post-execution metrics failed safety thresholds: Risk Score (0.90) > Max (0.75), ROI (-0.50) < Min (0.05), Cooperative Impact (-0.80) < Min (-0.10)
+  - New Log Entry: ver-PROP-003-3
 
-[FINAL-AUDIT] Final version records: 0
-
-[FEEDBACK-LOOP] Follow-up proposal PROP-004 adjustments:
-  - Calibrated Risk: 0.27
-  - Calibrated ROI: 1.60
-  - Budget Multiplier: 1.00 (limit 10000.00)
+[FINAL-AUDIT] Total version records: 3
+  - ver-PROP-001-1 [Proposal: PROP-001]
+  - ver-PROP-003-2 [Proposal: PROP-003]
+  - ver-PROP-003-3 [Proposal: PROP-003] <-- ROLLBACK RECORD for ver-PROP-003-2
 
 --- Demo Completed ---
