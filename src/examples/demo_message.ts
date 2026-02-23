@@ -2,6 +2,14 @@ import {
     AgentCoordinationMessage,
     MessageType
 } from '../schema/MessageSchema';
+import {
+    AuthorityProvider,
+    BudgetProvider,
+    IdentityVerifier,
+    NegotiationEngine,
+    ReputationProvider,
+    TransitionPermission
+} from '../engine/NegotiationEngine';
 
 /**
  * Example usage: Creating a formal "OFFER" for a collaborative data analysis task.
@@ -73,5 +81,120 @@ const collaborationOffer: AgentCoordinationMessage = {
     }
 };
 
-console.log('--- Created Agent Coordination Message ---');
-console.log(JSON.stringify(collaborationOffer, null, 2));
+const identityVerifier: IdentityVerifier = {
+    verify(message: AgentCoordinationMessage): boolean {
+        return Boolean(message.sender.signature ?? message.metadata?.verification?.identityVerified);
+    }
+};
+
+const reputationProvider: ReputationProvider = {
+    getScore(agentId: string): number {
+        const reputationTable: Record<string, number> = {
+            'agent:alpha-prime': 0.94,
+            'agent:beta-core': 0.9
+        };
+        return reputationTable[agentId] ?? 0;
+    }
+};
+
+const budgetProvider: BudgetProvider = {
+    getAvailableBudget(agentId: string, currency: string): number {
+        const budgetTable: Record<string, Record<string, number>> = {
+            'agent:alpha-prime': { USDT: 1000 },
+            'agent:beta-core': { USDT: 600 }
+        };
+        return budgetTable[agentId]?.[currency] ?? 0;
+    }
+};
+
+const authorityProvider: AuthorityProvider = {
+    hasPermission(agentId: string, permission: TransitionPermission): boolean {
+        const authorityMap: Record<string, string[]> = {
+            'agent:alpha-prime': [
+                'NEGOTIATE_PROPOSAL',
+                'NEGOTIATE_COUNTERPROPOSAL',
+                'NEGOTIATE_TENTATIVE_AGREEMENT',
+                'NEGOTIATE_FINAL_COMMITMENT'
+            ],
+            'agent:beta-core': [
+                'NEGOTIATE_COUNTERPROPOSAL',
+                'NEGOTIATE_TENTATIVE_AGREEMENT'
+            ]
+        };
+        return authorityMap[agentId]?.includes(permission) ?? false;
+    }
+};
+
+const engine = new NegotiationEngine({
+    identityVerifier,
+    reputationProvider,
+    budgetProvider,
+    authorityProvider,
+    minimumReputationScore: 0.75
+});
+
+const proposal: AgentCoordinationMessage = {
+    ...collaborationOffer,
+    type: MessageType.OFFER,
+    sender: {
+        ...collaborationOffer.sender,
+        signature: 'sig:proposal'
+    }
+};
+
+const counterproposal: AgentCoordinationMessage = {
+    ...collaborationOffer,
+    messageId: 'msg_8842af12',
+    type: MessageType.COUNTEROFFER,
+    sender: {
+        ...collaborationOffer.recipient,
+        signature: 'sig:counter'
+    },
+    recipient: {
+        ...collaborationOffer.sender
+    }
+};
+
+const tentativeAgreement: AgentCoordinationMessage = {
+    ...collaborationOffer,
+    messageId: 'msg_8842af13',
+    type: MessageType.ACCEPTANCE,
+    sender: {
+        ...collaborationOffer.sender,
+        signature: 'sig:accept'
+    }
+};
+
+const unverifiedCommitment: AgentCoordinationMessage = {
+    ...collaborationOffer,
+    messageId: 'msg_8842af14',
+    type: MessageType.COMMITMENT,
+    sender: {
+        ...collaborationOffer.sender
+    },
+    metadata: {
+        note: 'informal commitment'
+    }
+};
+
+const verifiedFinalCommitment: AgentCoordinationMessage = {
+    ...collaborationOffer,
+    messageId: 'msg_8842af15',
+    type: MessageType.COMMITMENT,
+    sender: {
+        ...collaborationOffer.sender,
+        signature: 'sig:commitment'
+    },
+    metadata: {
+        commitment: {
+            isFormal: true,
+            verificationToken: 'verify:txn:9382'
+        }
+    }
+};
+
+console.log('PROPOSAL =>', engine.process(proposal));
+console.log('COUNTERPROPOSAL =>', engine.process(counterproposal));
+console.log('TENTATIVE AGREEMENT =>', engine.process(tentativeAgreement));
+console.log('UNVERIFIED FINAL COMMITMENT =>', engine.process(unverifiedCommitment));
+console.log('VERIFIED FINAL COMMITMENT =>', engine.process(verifiedFinalCommitment));
