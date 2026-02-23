@@ -30,6 +30,15 @@ export interface ResourceAllocation {
 }
 
 /**
+ * Delegation constraints for a child/sub-agent budget inherited from a parent budget.
+ */
+export interface DelegationConstraints {
+  parentBudgetId: string;
+  parentAgentId: string;
+  inheritedResourceLimits: Record<ResourceType, number>;
+}
+
+/**
  * Record of a revision made to the agent's budget.
  */
 export interface BudgetRevision {
@@ -69,6 +78,12 @@ export interface AgentBudget {
    * If present, this agent draws from a collective resource pool.
    */
   poolingId?: string;
+
+  /**
+   * Present when this budget is delegated from a parent agent.
+   * Inherited limits cap how much this budget can ever allocate per resource.
+   */
+  delegation?: DelegationConstraints;
 
   /**
    * Status of the budget (e.g., "active", "suspended", "exhausted")

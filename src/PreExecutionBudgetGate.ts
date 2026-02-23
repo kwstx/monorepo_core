@@ -73,6 +73,7 @@ export interface GateEvaluationResult {
 
 export interface GateOptions {
   flagUtilizationThreshold?: number; // 0..1
+  parentBudget?: AgentBudget;
   logger?: (entry: BlockedActionLog) => void;
 }
 
@@ -85,6 +86,27 @@ function clampProbability(value: number): number {
 
 function getRemainingBudget(allocation: ResourceAllocation): number {
   return allocation.totalBudget - allocation.spentBudget - allocation.pendingAllocations;
+}
+
+function getDelegationCappedTotal(
+  budget: AgentBudget,
+  allocation: ResourceAllocation,
+  parentBudget?: AgentBudget
+): number {
+  const inheritedLimit = budget.delegation?.inheritedResourceLimits[allocation.resourceType];
+  if (inheritedLimit === undefined) {
+    return allocation.totalBudget;
+  }
+
+  let cappedTotal = Math.min(allocation.totalBudget, inheritedLimit);
+  if (parentBudget) {
+    const parentAllocation = findAllocation(parentBudget, allocation.resourceType);
+    if (parentAllocation) {
+      cappedTotal = Math.min(cappedTotal, getRemainingBudget(parentAllocation));
+    }
+  }
+
+  return cappedTotal;
 }
 
 function findAllocation(budget: AgentBudget, resourceType: ResourceType): ResourceAllocation | undefined {
@@ -119,6 +141,7 @@ export function PreExecutionBudgetGate(
   options: GateOptions = {}
 ): GateEvaluationResult {
   const threshold = options.flagUtilizationThreshold ?? DEFAULT_FLAG_UTILIZATION_THRESHOLD;
+  const parentBudget = options.parentBudget;
   const logger = options.logger ?? ((entry: BlockedActionLog) => console.warn('[PreExecutionBudgetGate]', JSON.stringify(entry, null, 2)));
 
   const allocation = findAllocation(budget, action.resourceType);
@@ -169,14 +192,15 @@ export function PreExecutionBudgetGate(
     };
   }
 
-  const remainingBudget = getRemainingBudget(allocation);
-  const utilizationAfterAction = allocation.totalBudget <= 0
+  const cappedTotalBudget = getDelegationCappedTotal(budget, allocation, parentBudget);
+  const remainingBudget = cappedTotalBudget - allocation.spentBudget - allocation.pendingAllocations;
+  const utilizationAfterAction = cappedTotalBudget <= 0
     ? 1
-    : (allocation.spentBudget + allocation.pendingAllocations + action.estimatedCost) / allocation.totalBudget;
+    : (allocation.spentBudget + allocation.pendingAllocations + action.estimatedCost) / cappedTotalBudget;
 
   const allocationSnapshot: AllocationSnapshot = {
     resourceType: allocation.resourceType,
-    totalBudget: allocation.totalBudget,
+    totalBudget: cappedTotalBudget,
     spentBudget: allocation.spentBudget,
     pendingAllocations: allocation.pendingAllocations,
     remainingBudget,
@@ -193,6 +217,21 @@ export function PreExecutionBudgetGate(
 
   if (action.agentId !== budget.agentId) {
     reasons.push(`Action agentId "${action.agentId}" does not match budget agentId "${budget.agentId}".`);
+  }
+
+  if (budget.delegation) {
+    if (parentBudget && parentBudget.id !== budget.delegation.parentBudgetId) {
+      reasons.push(
+        `Configured parent budget mismatch: expected "${budget.delegation.parentBudgetId}" but received "${parentBudget.id}".`
+      );
+    }
+
+    const inheritedLimit = budget.delegation.inheritedResourceLimits[allocation.resourceType];
+    if (inheritedLimit !== undefined && allocation.totalBudget > inheritedLimit) {
+      reasons.push(
+        `Delegated allocation (${allocation.totalBudget} ${allocation.unit}) exceeds inherited limit (${inheritedLimit} ${allocation.unit}) for ${allocation.resourceType}.`
+      );
+    }
   }
 
   if (action.estimatedCost > remainingBudget) {
