@@ -47,6 +47,7 @@ export interface VersionRecordPayload {
     economicImpact: FrozenEconomicImpactRecord;
     previousVersionHash: string | null;
     rollbackOfVersionId: string | null;
+    rollbackReason: string | null;
 }
 
 export interface VersionRecord {
@@ -62,6 +63,7 @@ export interface VersionRecord {
     readonly economicImpact: Readonly<FrozenEconomicImpactRecord>;
     readonly previousVersionHash: string | null;
     readonly rollbackOfVersionId: string | null;
+    readonly rollbackReason: string | null;
     readonly payloadHash: string;
     readonly signature: string;
     readonly signatureAlgorithm: string;
@@ -195,7 +197,8 @@ export class VersionControlEngine {
             consensusResult: this.freezeConsensus(input.consensusResult),
             economicImpact: this.freezeEconomicImpact(input.economicImpact),
             previousVersionHash,
-            rollbackOfVersionId: null
+            rollbackOfVersionId: null,
+            rollbackReason: null
         });
 
         return this.persistSignedRecord(payload);
@@ -213,7 +216,8 @@ export class VersionControlEngine {
             );
         }
 
-        const sourceHash = this.getLatestPayloadHash(input.proposalId);
+        const sourceVersion = this.findLatestForProposal(input.proposalId);
+        const sourceHash = sourceVersion?.record.payloadHash ?? null;
         if (!sourceHash) {
             throw new Error(`No version history exists for proposal ${input.proposalId}.`);
         }
@@ -230,14 +234,14 @@ export class VersionControlEngine {
             consensusResult: target.record.consensusResult,
             economicImpact: target.record.economicImpact,
             previousVersionHash: sourceHash,
-            rollbackOfVersionId: input.targetVersionId
+            rollbackOfVersionId: input.targetVersionId,
+            rollbackReason: input.reason
         });
 
         const rollbackRecord = this.persistSignedRecord(rollbackPayload);
-        void input.reason;
 
         return {
-            sourceVersionId: this.findLatestForProposal(input.proposalId)!.record.versionId,
+            sourceVersionId: sourceVersion!.record.versionId,
             targetVersion: this.cloneRecord(target.record),
             rollbackRecord
         };
@@ -304,6 +308,7 @@ export class VersionControlEngine {
             economicImpact: payload.economicImpact,
             previousVersionHash: payload.previousVersionHash,
             rollbackOfVersionId: payload.rollbackOfVersionId,
+            rollbackReason: payload.rollbackReason,
             payloadHash,
             signature,
             signatureAlgorithm: this.signatureProvider.algorithm,
