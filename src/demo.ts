@@ -136,3 +136,101 @@ for (const action of proposedActions) {
 }
 
 console.log('-------------------------------');
+
+console.log('\n--- DynamicBudgetEngine Recalibration Demo ---');
+
+const engine = new DynamicBudgetEngine({
+    learningRate: 0.2, // Faster adaptation for demo purposes
+    maxIncreasePercentage: 0.3,
+    maxDecreasePercentage: 0.2
+});
+
+const highPerfInput: RecalibrationInput = {
+    agentId: 'agent-alpha',
+    metrics: {
+        successRate: 0.95,
+        efficiencyScore: 0.88,
+        latencyMs: 120,
+        reliabilityScore: 0.98
+    },
+    simulations: [
+        { simulatedScenario: 'Market Expansion', successProbability: 0.85, projectedCost: 500, projectedBenefit: 1200, riskLevel: 'low' }
+    ],
+    roi: {
+        actualRoi: 0.45,
+        projectedRoi: 0.60,
+        confidenceInterval: [0.4, 0.7]
+    },
+    feedback: {
+        approvalRate: 1.0,
+        sentimentScore: 0.9,
+        notes: 'Excellent performance in recent quarters.'
+    },
+    cooperativeImpactFactor: 1.0 // Neutral
+};
+
+console.log('\nSCENARIO 1: High Performance Agent');
+const result1 = engine.recalibrate(exampleAgentBudget, highPerfInput);
+console.log(`Adjustment Reasons: ${result1.adjustmentReasons.join(' | ')}`);
+result1.newAllocations.forEach(a => {
+    const prev = result1.previousAllocations.find(p => p.resourceType === a.resourceType);
+    console.log(` - ${a.resourceType}: ${prev?.totalBudget} -> ${a.totalBudget} ${a.unit}`);
+});
+
+// Create a copy of the budget for scenario 2
+const underperfBudget: any = JSON.parse(JSON.stringify(exampleAgentBudget));
+underperfBudget.id = 'budget-002';
+underperfBudget.agentId = 'agent-underperf';
+
+const lowPerfInput: RecalibrationInput = {
+    agentId: 'agent-underperf',
+    metrics: {
+        successRate: 0.4,
+        efficiencyScore: 0.3,
+        latencyMs: 800,
+        reliabilityScore: 0.5
+    },
+    simulations: [
+        { simulatedScenario: 'Feature Backlog', successProbability: 0.2, projectedCost: 1000, projectedBenefit: 200, riskLevel: 'high' }
+    ],
+    roi: {
+        actualRoi: -0.3,
+        projectedRoi: -0.1,
+        confidenceInterval: [-0.5, 0.1]
+    },
+    feedback: {
+        approvalRate: 0.2,
+        sentimentScore: -0.4,
+        notes: 'Multiple failures and high cost.'
+    },
+    cooperativeImpactFactor: 1.0
+};
+
+console.log('\nSCENARIO 2: Underperforming Agent');
+const result2 = engine.recalibrate(underperfBudget, lowPerfInput);
+console.log(`Adjustment Reasons: ${result2.adjustmentReasons.join(' | ')}`);
+result2.newAllocations.forEach(a => {
+    const prev = result2.previousAllocations.find(p => p.resourceType === a.resourceType);
+    console.log(` - ${a.resourceType}: ${prev?.totalBudget} -> ${a.totalBudget} ${a.unit}`);
+});
+
+// Scenario 3: Underperforming but highly cooperative agent
+const cooperativeBudget: any = JSON.parse(JSON.stringify(underperfBudget));
+cooperativeBudget.id = 'budget-003';
+cooperativeBudget.agentId = 'agent-coop-underperf';
+
+const coopLowPerfInput: RecalibrationInput = {
+    ...lowPerfInput,
+    agentId: 'agent-coop-underperf',
+    cooperativeImpactFactor: 2.5 // Highly cooperative
+};
+
+console.log('\nSCENARIO 3: Underperforming but Highly Cooperative Agent');
+const result3 = engine.recalibrate(cooperativeBudget, coopLowPerfInput);
+console.log(`Adjustment Reasons: ${result3.adjustmentReasons.join(' | ')}`);
+result3.newAllocations.forEach(a => {
+    const prev = result3.previousAllocations.find(p => p.resourceType === a.resourceType);
+    console.log(` - ${a.resourceType}: ${prev?.totalBudget} -> ${a.totalBudget} ${a.unit}`);
+});
+
+console.log('-------------------------------');
