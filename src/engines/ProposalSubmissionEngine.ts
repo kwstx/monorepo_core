@@ -306,6 +306,16 @@ export class ProposalSubmissionEngine {
                     disapprovals: proposal.consensusScores.disapprovals,
                     consensusReached: proposal.consensusScores.consensusReached
                 }
+                : null,
+            impactAssessment: proposal.impactAssessment
+                ? {
+                    predictedEconomicCost: proposal.impactAssessment.predictedEconomicCost,
+                    projectedROI: proposal.impactAssessment.projectedROI,
+                    riskScore: proposal.impactAssessment.riskScore,
+                    synergyMetrics: { ...proposal.impactAssessment.synergyMetrics },
+                    recommendation: proposal.impactAssessment.recommendation,
+                    timestamp: proposal.impactAssessment.timestamp.toISOString()
+                }
                 : null
         });
     }

@@ -56,12 +56,27 @@ export interface GovernanceMetadata {
     strategicAlignmentScore: number; // 0.0 to 1.0
 }
 
+export interface ConsensusVote {
+    agentId: string;
+    predictedImpact: number; // 0.0 to 1.0
+    cooperationValue: number; // 0.0 to 1.0
+    taskAlignment: number; // 0.0 to 1.0
+    weight: number; // Influence weight of this agent
+    approved: boolean;
+    rationale: string;
+}
+
 export interface ConsensusScore {
     totalAgents: number;
     approvals: number;
     abstentions: number;
     disapprovals: number;
+    weightedConsensusScore: number; // 0.0 to 1.0
+    averageImpact: number;
+    averageCooperation: number;
+    averageAlignment: number;
     consensusReached: boolean;
+    votes: ConsensusVote[];
 }
 
 export class SelfModificationProposal {
