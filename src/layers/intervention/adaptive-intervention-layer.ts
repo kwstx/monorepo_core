@@ -1,5 +1,6 @@
 import { ActionContext, Intervention, InterventionType, Violation, ViolationSeverity, EnforcementState } from '../../core/models';
 import { BaseEnforcementLayer } from '../base-layer';
+import { appendDecisionExplanation } from '../../core/decision-log';
 
 export class AdaptiveInterventionLayer extends BaseEnforcementLayer {
 
@@ -20,6 +21,21 @@ export class AdaptiveInterventionLayer extends BaseEnforcementLayer {
             if (!existingIntervention) {
                 const intervention = this.determineIntervention(violation);
                 context.interventions.push(intervention);
+                appendDecisionExplanation(context, {
+                    layer: this.resolveLayerFromViolation(violation.sourceLayer),
+                    component: this.getName(),
+                    outcome: 'INTERVENE',
+                    summary: `Adaptive intervention applied: ${intervention.type}.`,
+                    rationale: [
+                        `Violation severity ${violation.severity} requires intervention.`,
+                        `Intervention reason: ${intervention.reason}`
+                    ],
+                    evidence: {
+                        interventionId: intervention.id,
+                        interventionType: intervention.type,
+                        violationId: violation.id
+                    }
+                });
 
                 console.log(`[${this.getName()}] Triggered ${intervention.type} due to ${violation.severity} severity violation: ${violation.description}`);
 
@@ -94,5 +110,16 @@ export class AdaptiveInterventionLayer extends BaseEnforcementLayer {
                 context.metadata.restrictedPermissions = true;
                 break;
         }
+    }
+
+    private resolveLayerFromViolation(sourceLayer: string): 'PRE_EXECUTION' | 'IN_PROCESS' | 'POST_EXECUTION' {
+        const source = sourceLayer.toLowerCase();
+        if (source.includes('preexecution') || source.includes('predictive')) {
+            return 'PRE_EXECUTION';
+        }
+        if (source.includes('postexecution') || source.includes('audit')) {
+            return 'POST_EXECUTION';
+        }
+        return 'IN_PROCESS';
     }
 }

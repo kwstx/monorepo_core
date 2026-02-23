@@ -35,6 +35,30 @@ export interface Violation {
     metadata: Record<string, any>;
 }
 
+export type EnforcementLayer = 'PRE_EXECUTION' | 'IN_PROCESS' | 'POST_EXECUTION';
+export type EnforcementDecisionOutcome =
+    | 'PASS'
+    | 'WARN'
+    | 'HOLD'
+    | 'BLOCK'
+    | 'EXECUTE'
+    | 'SUSPEND'
+    | 'AUDIT_PASS'
+    | 'AUDIT_FAIL'
+    | 'REMEDIATE'
+    | 'INTERVENE';
+
+export interface EnforcementDecisionExplanation {
+    decisionId: string;
+    timestamp: Date;
+    layer: EnforcementLayer;
+    component: string;
+    outcome: EnforcementDecisionOutcome;
+    summary: string;
+    rationale: string[];
+    evidence: Record<string, unknown>;
+}
+
 export type SystemChangeType = 'CREATE' | 'UPDATE' | 'DELETE' | 'PERMISSION_CHANGE' | 'CONFIG_CHANGE';
 
 export interface SystemChangeRecord {
@@ -254,6 +278,7 @@ export interface ActionContext {
     synergyDensityForecasts?: SynergyDensityForecast[];
     influenceWeight?: number;
     taskFormationProbabilities?: TaskFormationProbabilityMap;
+    decisionExplanations?: EnforcementDecisionExplanation[];
 }
 
 export enum InterventionType {

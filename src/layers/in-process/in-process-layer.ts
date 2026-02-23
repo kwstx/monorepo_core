@@ -2,6 +2,7 @@ import { BaseEnforcementLayer } from '../base-layer';
 import { ActionContext, EnforcementState, ViolationCategory, ViolationSeverity, InProcessMonitorPolicy } from '../../core/models';
 import { EnforcementEvents } from '../../core/event-bus';
 import { InProcessMonitor } from './in-process-monitor';
+import { appendDecisionExplanation } from '../../core/decision-log';
 
 export class InProcessLayer extends BaseEnforcementLayer {
     getName(): string {
@@ -21,10 +22,32 @@ export class InProcessLayer extends BaseEnforcementLayer {
 
     async process(context: ActionContext): Promise<ActionContext> {
         if (context.status !== EnforcementState.PRE_EXECUTION_PASSED) {
+            appendDecisionExplanation(context, {
+                layer: 'IN_PROCESS',
+                component: this.getName(),
+                outcome: 'HOLD',
+                summary: 'In-process monitoring skipped because pre-execution did not pass.',
+                rationale: [
+                    `Current state is ${context.status}.`,
+                    'Execution monitoring only starts when status is PRE_EXECUTION_PASSED.'
+                ],
+                evidence: { status: context.status }
+            });
             return context;
         }
 
         context.status = EnforcementState.EXECUTING;
+        appendDecisionExplanation(context, {
+            layer: 'IN_PROCESS',
+            component: this.getName(),
+            outcome: 'EXECUTE',
+            summary: 'In-process monitoring started.',
+            rationale: [
+                'Pre-execution checks passed.',
+                'Execution trace will be inspected for anomalies, scope drift, and policy violations.'
+            ],
+            evidence: { actionId: context.actionId }
+        });
         this.eventBus.emit(EnforcementEvents.ACTION_EXECUTING, context);
 
         console.log(`[${this.getName()}] Monitoring action: ${context.actionId}`);
@@ -60,6 +83,17 @@ export class InProcessLayer extends BaseEnforcementLayer {
             };
 
             context.violations.push(violation);
+            appendDecisionExplanation(context, {
+                layer: 'IN_PROCESS',
+                component: this.getName(),
+                outcome: 'WARN',
+                summary: 'Resource usage exceeded in-process policy threshold.',
+                rationale: [
+                    `Observed resource usage was ${resourceUsage}.`,
+                    'Execution continued with violation logged for intervention and audit.'
+                ],
+                evidence: { violationId: violation.id, resourceUsage }
+            });
             this.eventBus.emitViolation(context.actionId, violation);
         }
 

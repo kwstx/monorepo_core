@@ -11,6 +11,7 @@ import {
     ViolationSeverity
 } from '../../core/models';
 import { StabilityFeedbackConnector } from './stability-feedback-connector';
+import { appendDecisionExplanation } from '../../core/decision-log';
 
 export class RemediationEngine {
     private readonly stabilityFeedbackConnector: StabilityFeedbackConnector;
@@ -22,6 +23,17 @@ export class RemediationEngine {
     public async remediate(context: ActionContext): Promise<ActionContext> {
         const confirmedViolations = this.getConfirmedViolations(context);
         if (confirmedViolations.length === 0) {
+            appendDecisionExplanation(context, {
+                layer: 'POST_EXECUTION',
+                component: 'RemediationEngine',
+                outcome: 'PASS',
+                summary: 'Remediation skipped because no confirmed violations required rollback.',
+                rationale: [
+                    'No high-confidence violations met remediation criteria.',
+                    'System state left unchanged by remediation engine.'
+                ],
+                evidence: { confirmedViolationCount: 0 }
+            });
             return context;
         }
 
@@ -48,6 +60,21 @@ export class RemediationEngine {
 
         context.remediationReport = report;
         context.status = EnforcementState.REMEDIATED;
+        appendDecisionExplanation(context, {
+            layer: 'POST_EXECUTION',
+            component: 'RemediationEngine',
+            outcome: 'REMEDIATE',
+            summary: 'Remediation executed for confirmed violations.',
+            rationale: [
+                `Confirmed ${confirmedViolations.length} violations requiring remediation.`,
+                `Prepared ${rollbackTransactions.length} rollback transactions and ${notifications.length} notifications.`
+            ],
+            evidence: {
+                confirmedViolationIds: report.confirmedViolationIds,
+                rollbackCount: report.rollbackTransactions.length,
+                safeRollback: report.safeRollback
+            }
+        });
         return context;
     }
 

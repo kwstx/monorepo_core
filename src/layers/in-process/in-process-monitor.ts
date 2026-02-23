@@ -10,6 +10,7 @@ import {
 import { EnforcementEventBus, EnforcementEvents } from '../../core/event-bus';
 import { AnomalyDetectionEngine } from './anomaly-detection-engine';
 import { ViolationPropagationModule } from '../../core/violation-propagation';
+import { appendDecisionExplanation } from '../../core/decision-log';
 
 export class InProcessMonitor {
     private context: ActionContext;
@@ -210,7 +211,34 @@ export class InProcessMonitor {
             // Check for critical violations to suspend execution
             if (violations.some(v => v.severity === ViolationSeverity.CRITICAL || v.severity === ViolationSeverity.HIGH)) {
                 this.context.status = EnforcementState.SUSPENDED;
+                appendDecisionExplanation(this.context, {
+                    layer: 'IN_PROCESS',
+                    component: 'InProcessMonitor',
+                    outcome: 'SUSPEND',
+                    summary: `Execution suspended at step ${step.stepId} due to high-severity violations.`,
+                    rationale: [
+                        'At least one HIGH or CRITICAL violation was detected in the current step.',
+                        'Policy requires suspension for immediate containment.'
+                    ],
+                    evidence: {
+                        stepId: step.stepId,
+                        violationIds: violations.map(v => v.id),
+                        severities: violations.map(v => v.severity)
+                    }
+                });
             }
+        } else {
+            appendDecisionExplanation(this.context, {
+                layer: 'IN_PROCESS',
+                component: 'InProcessMonitor',
+                outcome: 'PASS',
+                summary: `Execution step ${step.stepId} passed in-process checks.`,
+                rationale: [
+                    'No scope, API, data-access, cooperative, or anomaly thresholds were violated.',
+                    'Execution can continue to the next step.'
+                ],
+                evidence: { stepId: step.stepId }
+            });
         }
 
         this.eventBus.emitStateChange(this.context);
@@ -235,7 +263,7 @@ export class InProcessMonitor {
         description: string,
         metadata: any
     ): Violation {
-        return {
+        const violation = {
             id: `v-inproc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             timestamp: new Date(),
             category,
@@ -244,6 +272,20 @@ export class InProcessMonitor {
             sourceLayer: 'InProcessMonitor',
             metadata
         };
+
+        appendDecisionExplanation(this.context, {
+            layer: 'IN_PROCESS',
+            component: 'InProcessMonitor',
+            outcome: severity === ViolationSeverity.HIGH || severity === ViolationSeverity.CRITICAL ? 'SUSPEND' : 'WARN',
+            summary: description,
+            rationale: [
+                `Violation category ${category} triggered during live execution.`,
+                `Severity ${severity} requires ${severity === ViolationSeverity.HIGH || severity === ViolationSeverity.CRITICAL ? 'containment-oriented handling.' : 'continued execution with monitoring.'}`
+            ],
+            evidence: metadata || {}
+        });
+
+        return violation;
     }
 
     public getContext(): ActionContext {

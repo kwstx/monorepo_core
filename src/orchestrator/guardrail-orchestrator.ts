@@ -4,6 +4,7 @@ import { PreExecutionLayer } from '../layers/pre-execution/pre-execution-layer';
 import { InProcessLayer } from '../layers/in-process/in-process-layer';
 import { PostExecutionLayer } from '../layers/post-execution/post-execution-layer';
 import { AdaptiveInterventionLayer } from '../layers/intervention/adaptive-intervention-layer';
+import { appendDecisionExplanation } from '../core/decision-log';
 
 export class GuardrailOrchestrator {
     private eventBus: EnforcementEventBus;
@@ -52,8 +53,13 @@ export class GuardrailOrchestrator {
         });
     }
 
-    public async coordinate(agentId: string, intent: string, params: Record<string, any>): Promise<ActionContext> {
-        const actionId = `act-${Date.now()}`;
+    public async coordinate(
+        agentId: string,
+        intent: string,
+        params: Record<string, any>,
+        options?: { actionId?: string }
+    ): Promise<ActionContext> {
+        const actionId = options?.actionId || `act-${Date.now()}`;
         let context: ActionContext = {
             actionId,
             agentId,
@@ -63,10 +69,23 @@ export class GuardrailOrchestrator {
             status: EnforcementState.PENDING,
             violations: [],
             interventions: [],
+            decisionExplanations: [],
             systemChanges: Array.isArray(params.systemChanges) ? params.systemChanges : undefined,
             stakeholders: Array.isArray(params.stakeholders) ? params.stakeholders : undefined,
             trustCoefficient: typeof params.trustCoefficient === 'number' ? params.trustCoefficient : 1.0
         };
+
+        appendDecisionExplanation(context, {
+            layer: 'PRE_EXECUTION',
+            component: 'GuardrailOrchestrator',
+            outcome: 'HOLD',
+            summary: 'Action submitted for guardrail coordination.',
+            rationale: [
+                `Received action ${actionId} from agent ${agentId}.`,
+                'Execution will proceed through pre-execution, in-process, and post-execution layers.'
+            ],
+            evidence: { intent, hasParams: Object.keys(params || {}).length > 0 }
+        });
 
         this.activeActions.set(actionId, context);
         this.eventBus.emit(EnforcementEvents.ACTION_PROPOSED, context);
@@ -91,6 +110,17 @@ export class GuardrailOrchestrator {
             context.endTime = new Date();
             context.status = EnforcementState.COMPLETED;
             this.eventBus.emit(EnforcementEvents.ACTION_COMPLETED, context);
+            appendDecisionExplanation(context, {
+                layer: 'IN_PROCESS',
+                component: 'GuardrailOrchestrator',
+                outcome: 'EXECUTE',
+                summary: 'Action execution completed and moved to post-execution audit.',
+                rationale: [
+                    'In-process monitoring did not leave action in suspended state.',
+                    'Post-execution audit is required before final disposition.'
+                ],
+                evidence: { actionId: context.actionId, status: context.status }
+            });
 
             // 3. Post-Execution
             context = await this.postExecution.process(context);
@@ -99,5 +129,9 @@ export class GuardrailOrchestrator {
         } finally {
             this.activeActions.delete(actionId);
         }
+    }
+
+    public getActiveContext(actionId: string): ActionContext | undefined {
+        return this.activeActions.get(actionId);
     }
 }
