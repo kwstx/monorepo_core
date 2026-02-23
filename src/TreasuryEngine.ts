@@ -180,7 +180,7 @@ export class TreasuryEngine {
 
             // ROI-weighted share calculation
             const rawShare = (p.score / totalScore) * pool.totalAmount;
-            const allocationAmount = Math.min(rawShare, p.remaining, pool.totalAmount);
+            const allocationAmount = Number(Math.min(rawShare, p.remaining, pool.totalAmount).toFixed(2));
 
             if (allocationAmount > 0) {
                 const project = this.projects.get(p.id)!;
