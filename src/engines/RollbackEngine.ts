@@ -1,4 +1,5 @@
 import { ProposalStatus, SelfModificationProposal } from '../models/SelfModificationProposal';
+import { SelfImprovementFeedbackLoop } from './SelfImprovementFeedbackLoop';
 import { RollbackPlan, VersionControlEngine } from './VersionControlEngine';
 
 /**
@@ -57,7 +58,8 @@ export class RollbackEngine {
             maxRiskScore: 0.75,
             minROI: 0.05,
             minCooperativeImpact: -0.1
-        }
+        },
+        private readonly feedbackLoop?: SelfImprovementFeedbackLoop
     ) { }
 
     /**
@@ -101,6 +103,31 @@ export class RollbackEngine {
         };
 
         this.outcomes.push(outcome);
+        this.feedbackLoop?.recordOutcome({
+            proposal,
+            sandboxPerformance: {
+                performanceDelta: proposal.simulationResults?.performanceDelta ?? 0,
+                resourceUsageDelta: proposal.simulationResults?.resourceUsageDelta ?? 0,
+                stabilityScore: proposal.simulationResults?.stabilityScore ?? 0
+            },
+            realWorldTaskImpact: {
+                taskCompletionDelta: clamp(metrics.roi, -1, 1),
+                qualityDelta: 1 - (metrics.riskScore * 2),
+                latencyDelta: proposal.simulationResults?.performanceDelta ?? 0
+            },
+            economic: {
+                actualCost: proposal.economicConstraints.estimatedCost,
+                actualROI: metrics.roi
+            },
+            cooperation: {
+                coordinationQuality: normalize(metrics.cooperativeImpact),
+                conflictRate: 1 - normalize(metrics.cooperativeImpact),
+                sharedResourceEfficiency: proposal.consensusScores?.averageCooperation ?? 0.5
+            },
+            rolledBack: outcome.rollbackInitiated,
+            observedAt: metrics.evaluatedAt
+        });
+
         return outcome;
     }
 
@@ -174,4 +201,12 @@ export class RollbackEngine {
     public getOutcomes(): readonly RollbackOutcome[] {
         return [...this.outcomes];
     }
+}
+
+function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+}
+
+function normalize(value: number): number {
+    return clamp((value + 1) / 2, 0, 1);
 }

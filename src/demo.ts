@@ -4,6 +4,8 @@ import { ProposalSubmissionEngine, SubmissionEnvelope, AgentIdentityRegistry, Di
 import { ImpactAssessmentEngine } from './engines/ImpactAssessmentEngine';
 import { ConsensusEngine, VotingAgent } from './engines/ConsensusEngine';
 import { RsaSignatureProvider, VersionControlEngine } from './engines/VersionControlEngine';
+import { RollbackEngine } from './engines/RollbackEngine';
+import { SelfImprovementFeedbackLoop } from './engines/SelfImprovementFeedbackLoop';
 
 // Mock implementations for the demo
 class MockIdentityRegistry implements AgentIdentityRegistry {
@@ -48,16 +50,20 @@ async function demo() {
     console.log("--- Self-Improvement Governance: Impact Assessment Demo ---\n");
 
     const evaluationEngine = new SandboxEvaluationEngine();
-    const assessmentEngine = new ImpactAssessmentEngine();
+    const feedbackLoop = new SelfImprovementFeedbackLoop();
+    const assessmentEngine = new ImpactAssessmentEngine(feedbackLoop);
     const submissionEngine = new ProposalSubmissionEngine(
         new MockIdentityRegistry(),
         new MockDigestProvider(),
         new MockSignatureVerifier(),
-        assessmentEngine
+        assessmentEngine,
+        undefined,
+        feedbackLoop
     );
 
     const consensusEngine = new ConsensusEngine({ threshold: 0.75, requiredApprovals: 2 });
     const versionControlEngine = new VersionControlEngine(RsaSignatureProvider.generate('Governance-Signer-1'));
+    const rollbackEngine = new RollbackEngine(versionControlEngine, undefined, feedbackLoop);
 
     const votingAgents: VotingAgent[] = [
         new MockVotingAgent("Agent-Observer-A", 1.0, (p) => ({
@@ -85,8 +91,8 @@ async function demo() {
         predictedRisk: 0.15,
         agentIdentity: "Agent-Alpha-01",
         economicConstraints: {
-            budgetLimit: 500,
-            estimatedCost: 50,
+            budgetLimit: 2000,
+            estimatedCost: 800,
             requiredMinROI: 2.0,
             projectedROI: 4.5
         },
@@ -124,8 +130,8 @@ async function demo() {
         predictedRisk: 0.90, // VERY HIGH RISK
         agentIdentity: "Agent-Rogue-01",
         economicConstraints: {
-            budgetLimit: 1000,
-            estimatedCost: 200,
+            budgetLimit: 10000,
+            estimatedCost: 4000,
             requiredMinROI: 1.0,
             projectedROI: 2.5
         },
@@ -225,8 +231,117 @@ async function demo() {
     const versionAudit = versionControlEngine.queryVersions();
     console.log(`\n[VERSION-AUDIT] Stored immutable versions: ${versionAudit.length}`);
     versionAudit.forEach((record) => {
-        console.log(`  - ${record.versionId} proposal=${record.proposalId} signedBy=${record.signerId}`);
+        const rollbackMark = record.rollbackOfVersionId ? ` (ROLLBACK of ${record.rollbackOfVersionId})` : '';
+        console.log(`  - ${record.versionId} proposal=${record.proposalId} signedBy=${record.signerId}${rollbackMark}`);
     });
+
+    // --- 4. Rollback Engine Demo ---
+    console.log("\n--- 4. Rollback Engine Demo: Post-Execution Monitoring ---\n");
+
+    // Scenario: A proposal that was approved but performs poorly in production
+    const failingProposal = new SelfModificationProposal({
+        id: "PROP-003",
+        type: ProposalType.MAJOR,
+        proposedChange: "Enable experimental JIT optimization.",
+        targetModule: "ExecutionEngine",
+        expectedImpact: "30% faster execution.",
+        predictedRisk: 0.3,
+        agentIdentity: "Agent-Beta-02",
+        economicConstraints: {
+            budgetLimit: 10000,
+            estimatedCost: 5000,
+            requiredMinROI: 1.5,
+            projectedROI: 3.0
+        },
+        governanceMetadata: {
+            complianceProtocols: ["SAFETY_BASELINE_V1", "AUDIT_LOGGING_V1"],
+            strategicAlignmentScore: 0.75
+        }
+    });
+
+    console.log(`[SUBMISSION] Submitting Proposal ${failingProposal.id}...`);
+    submissionEngine.submit({
+        proposal: failingProposal,
+        payloadDigest: `digest-${serializeForMock(failingProposal).length}`,
+        signature: "sig-003"
+    });
+
+    const entry = submissionEngine.dequeueForEvaluation();
+    if (entry) {
+        const simResult = await evaluationEngine.evaluate(failingProposal);
+        if (simResult.success) {
+            const consensus = await consensusEngine.collectConsensus(failingProposal, votingAgents);
+            if (consensus.consensusReached) {
+                failingProposal.status = ProposalStatus.EXECUTED;
+                versionControlEngine.recordApprovedModification({
+                    proposal: failingProposal,
+                    createdBy: 'GovernanceController',
+                    approvalReference: `approval-prop3`,
+                    preExecutionMetrics: {
+                        baselinePerformance: 1.0, baselineResourceUsage: 1.0, baselineStability: 1.0, observedAt: new Date()
+                    },
+                    sandboxOutcome: { ...simResult, evaluatedAt: new Date() },
+                    consensusResult: { ...consensus, decidedAt: new Date() },
+                    economicImpact: { approvedBudget: 10000, predictedEconomicCost: 5000, projectedROI: 3.0, expectedPaybackCycles: 5 }
+                });
+                console.log(`[GOVERNANCE] Proposal ${failingProposal.id} EXECUTED.`);
+
+                // Simulate bad post-execution metrics
+                console.log(`[MONITORING] Capturing post-execution metrics for ${failingProposal.id}...`);
+                const badMetrics = {
+                    riskScore: 0.85, // TRIPPED (Threshold: 0.75)
+                    roi: 0.02,       // TRIPPED (Threshold: 0.05)
+                    cooperativeImpact: -0.2, // TRIPPED (Threshold: -0.1)
+                    evaluatedAt: new Date()
+                };
+
+                console.log(`[ROLLBACK-ENGINE] Evaluating performance for ${failingProposal.id}...`);
+                const outcome = await rollbackEngine.evaluate(failingProposal, badMetrics);
+
+                if (outcome.rollbackInitiated) {
+                    console.log(`[ROLLBACK-ENGINE] ROLLBACK TRIGGERED for ${failingProposal.id}!`);
+                    console.log(`  - Reason: ${outcome.reason}`);
+                    console.log(`  - New Log Entry: ${outcome.rollbackPlan?.rollbackRecord.versionId}`);
+                } else {
+                    console.log(`[ROLLBACK-ENGINE] Modification ${failingProposal.id} is stable.`);
+                }
+            }
+        }
+    }
+
+    const finalAudit = versionControlEngine.queryVersions();
+    console.log(`\n[FINAL-AUDIT] Final version records: ${finalAudit.length}`);
+    finalAudit.forEach((record) => {
+        const rollbackMark = record.rollbackOfVersionId ? ` <-- ROLLBACK RECORD for ${record.rollbackOfVersionId}` : '';
+        console.log(`  - ${record.versionId} [Proposal: ${record.proposalId}]${rollbackMark}`);
+    });
+
+    const followUpProposal = new SelfModificationProposal({
+        id: "PROP-004",
+        type: ProposalType.MAJOR,
+        proposedChange: "Tune adaptive scheduling windows after rollback lessons.",
+        targetModule: "ExecutionEngine",
+        expectedImpact: "Stabilize throughput under load.",
+        predictedRisk: 0.3,
+        agentIdentity: "Agent-Beta-02",
+        economicConstraints: {
+            budgetLimit: 10000,
+            estimatedCost: 1600,
+            requiredMinROI: 1.2,
+            projectedROI: 2.0
+        },
+        governanceMetadata: {
+            complianceProtocols: ["SAFETY_BASELINE_V1", "AUDIT_LOGGING_V1"],
+            strategicAlignmentScore: 0.82
+        }
+    });
+
+    const adjustedAssessment = assessmentEngine.assess(followUpProposal);
+    const adjustedBudget = feedbackLoop.getBudgetAllocationRule(followUpProposal);
+    console.log(`\n[FEEDBACK-LOOP] Follow-up proposal ${followUpProposal.id} adjustments:`);
+    console.log(`  - Calibrated Risk: ${adjustedAssessment.riskScore.toFixed(2)}`);
+    console.log(`  - Calibrated ROI: ${adjustedAssessment.projectedROI.toFixed(2)}`);
+    console.log(`  - Budget Multiplier: ${adjustedBudget.allocationMultiplier.toFixed(2)} (limit ${adjustedBudget.adjustedBudgetLimit.toFixed(2)})`);
 
     console.log("\n--- Demo Completed ---");
 }

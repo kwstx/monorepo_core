@@ -13,6 +13,7 @@ import {
     PolicyValidationLayer,
     PolicyViolation
 } from './PolicyValidationLayer';
+import { SelfImprovementFeedbackLoop } from './SelfImprovementFeedbackLoop';
 
 export enum SubmissionFailureCode {
     INVALID_PROPOSAL = 'INVALID_PROPOSAL',
@@ -94,7 +95,8 @@ export class ProposalSubmissionEngine {
         private readonly digestProvider: DigestProvider,
         private readonly signatureVerifier: SignatureVerifier,
         private readonly assessmentEngine: ImpactAssessmentEngine = new ImpactAssessmentEngine(),
-        private readonly policyValidationLayer: PolicyValidationLayer = new PolicyValidationLayer()
+        private readonly policyValidationLayer: PolicyValidationLayer = new PolicyValidationLayer(),
+        private readonly feedbackLoop?: SelfImprovementFeedbackLoop
     ) { }
 
     submit(envelope: SubmissionEnvelope): ProposalQueueEntry {
@@ -217,10 +219,12 @@ export class ProposalSubmissionEngine {
             );
         }
 
-        if (proposal.economicConstraints.estimatedCost > proposal.economicConstraints.budgetLimit) {
+        const budgetRule = this.feedbackLoop?.getBudgetAllocationRule(proposal);
+        const effectiveBudgetLimit = budgetRule?.adjustedBudgetLimit ?? proposal.economicConstraints.budgetLimit;
+        if (proposal.economicConstraints.estimatedCost > effectiveBudgetLimit) {
             throw new ProposalSubmissionError(
                 SubmissionFailureCode.INVALID_PROPOSAL,
-                'Estimated cost exceeds proposal budget limit.'
+                `Estimated cost exceeds effective budget limit (${effectiveBudgetLimit.toFixed(2)}).`
             );
         }
 

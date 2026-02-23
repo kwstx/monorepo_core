@@ -4,6 +4,7 @@ import {
     SelfModificationProposal,
     SynergyMetrics
 } from '../models/SelfModificationProposal';
+import { SelfImprovementFeedbackLoop } from './SelfImprovementFeedbackLoop';
 
 /**
  * ImpactAssessmentEngine
@@ -14,6 +15,7 @@ import {
 export class ImpactAssessmentEngine {
     private readonly RISK_THRESHOLD = 0.75;
     private readonly BUDGET_THRESHOLD_FACTOR = 0.9; // Warning at 90% of budget
+    constructor(private readonly feedbackLoop?: SelfImprovementFeedbackLoop) { }
 
     /**
      * Performs a comprehensive impact assessment on a proposal.
@@ -25,20 +27,37 @@ export class ImpactAssessmentEngine {
         const predictedEconomicCost = this.calculatePredictedCost(proposal, synergyMetrics);
         const projectedROI = this.calculateProjectedROI(proposal, predictedEconomicCost, synergyMetrics);
         const riskScore = this.calculateRefinedRiskScore(proposal, synergyMetrics);
+        const adjustments = this.feedbackLoop?.getPredictiveAdjustments(proposal);
+
+        const calibratedRiskScore = adjustments
+            ? this.clamp01(riskScore + (adjustments.riskBias * adjustments.confidence))
+            : riskScore;
+        const calibratedProjectedROI = adjustments
+            ? projectedROI + (adjustments.roiBias * adjustments.confidence)
+            : projectedROI;
+        const calibratedSynergyMetrics = adjustments
+            ? {
+                ...synergyMetrics,
+                agentCollaborationEfficiency: this.clamp01(
+                    synergyMetrics.agentCollaborationEfficiency +
+                    (adjustments.cooperationBias * 0.5 * adjustments.confidence)
+                )
+            }
+            : synergyMetrics;
 
         const recommendation = this.determineRecommendation(
-            riskScore,
+            calibratedRiskScore,
             predictedEconomicCost,
             proposal.economicConstraints.budgetLimit,
-            projectedROI,
+            calibratedProjectedROI,
             proposal.economicConstraints.requiredMinROI
         );
 
         return {
             predictedEconomicCost,
-            projectedROI,
-            riskScore,
-            synergyMetrics,
+            projectedROI: calibratedProjectedROI,
+            riskScore: calibratedRiskScore,
+            synergyMetrics: calibratedSynergyMetrics,
             recommendation,
             timestamp: new Date()
         };
@@ -114,5 +133,9 @@ export class ImpactAssessmentEngine {
         }
 
         return 'ALLOW';
+    }
+
+    private clamp01(value: number): number {
+        return Math.max(0, Math.min(1, value));
     }
 }
