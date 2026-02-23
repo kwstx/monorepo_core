@@ -14,11 +14,18 @@ export enum ProposalStatus {
     ROLLED_BACK = 'ROLLED_BACK'
 }
 
+export interface SimulationMetrics {
+    downstreamEffects: number; // -1.0 to 1.0 (negative to positive impact)
+    cooperationImpact: number; // -1.0 to 1.0
+    vocationalOutcome: number; // -1.0 to 1.0
+}
+
 export interface SimulationResult {
     success: boolean;
     performanceDelta: number;
     resourceUsageDelta: number;
     stabilityScore: number;
+    metrics: SimulationMetrics;
     logs: string[];
 }
 
@@ -27,6 +34,11 @@ export interface EconomicConstraints {
     estimatedCost: number;
     requiredMinROI: number;
     projectedROI: number;
+}
+
+export interface GovernanceMetadata {
+    complianceProtocols: string[];
+    strategicAlignmentScore: number; // 0.0 to 1.0
 }
 
 export interface ConsensusScore {
@@ -48,13 +60,16 @@ export class SelfModificationProposal {
     predictedRisk: number; // 0.0 to 1.0
     agentIdentity: string;
     timestamp: Date;
-    
+
     // Detailed simulation results
     simulationResults?: SimulationResult;
-    
+
     // Economic constraints & ROI
     economicConstraints: EconomicConstraints;
-    
+
+    // Governance metadata
+    governanceMetadata: GovernanceMetadata;
+
     // Multi-agent consensus
     consensusScores?: ConsensusScore;
 
@@ -68,6 +83,7 @@ export class SelfModificationProposal {
         predictedRisk: number;
         agentIdentity: string;
         economicConstraints: EconomicConstraints;
+        governanceMetadata: GovernanceMetadata;
     }) {
         this.id = data.id;
         this.type = data.type;
@@ -80,6 +96,7 @@ export class SelfModificationProposal {
         this.agentIdentity = data.agentIdentity;
         this.timestamp = new Date();
         this.economicConstraints = data.economicConstraints;
+        this.governanceMetadata = data.governanceMetadata;
     }
 
     public updateSimulationResults(results: SimulationResult) {

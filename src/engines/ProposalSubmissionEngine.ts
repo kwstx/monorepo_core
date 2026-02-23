@@ -1,6 +1,7 @@
 import {
     ConsensusScore,
     EconomicConstraints,
+    GovernanceMetadata,
     ProposalStatus,
     ProposalType,
     SelfModificationProposal,
@@ -64,6 +65,7 @@ export type ProposalSnapshot = {
     timestamp: string;
     simulationResults: SimulationResult | null;
     economicConstraints: EconomicConstraints;
+    governanceMetadata: GovernanceMetadata;
     consensusScores: ConsensusScore | null;
 };
 
@@ -75,7 +77,7 @@ export class ProposalSubmissionEngine {
         private readonly identities: AgentIdentityRegistry,
         private readonly digestProvider: DigestProvider,
         private readonly signatureVerifier: SignatureVerifier
-    ) {}
+    ) { }
 
     submit(envelope: SubmissionEnvelope): ProposalQueueEntry {
         const proposal = envelope.proposal;
@@ -188,11 +190,16 @@ export class ProposalSubmissionEngine {
             timestamp: proposal.timestamp.toISOString(),
             simulationResults: proposal.simulationResults
                 ? {
-                      ...proposal.simulationResults,
-                      logs: [...proposal.simulationResults.logs]
-                  }
+                    ...proposal.simulationResults,
+                    metrics: { ...proposal.simulationResults.metrics },
+                    logs: [...proposal.simulationResults.logs]
+                }
                 : null,
             economicConstraints: { ...proposal.economicConstraints },
+            governanceMetadata: {
+                ...proposal.governanceMetadata,
+                complianceProtocols: [...proposal.governanceMetadata.complianceProtocols]
+            },
             consensusScores: proposal.consensusScores ? { ...proposal.consensusScores } : null
         };
 
@@ -213,12 +220,13 @@ export class ProposalSubmissionEngine {
             timestamp: proposal.timestamp.toISOString(),
             simulationResults: proposal.simulationResults
                 ? {
-                      success: proposal.simulationResults.success,
-                      performanceDelta: proposal.simulationResults.performanceDelta,
-                      resourceUsageDelta: proposal.simulationResults.resourceUsageDelta,
-                      stabilityScore: proposal.simulationResults.stabilityScore,
-                      logs: [...proposal.simulationResults.logs]
-                  }
+                    success: proposal.simulationResults.success,
+                    performanceDelta: proposal.simulationResults.performanceDelta,
+                    resourceUsageDelta: proposal.simulationResults.resourceUsageDelta,
+                    stabilityScore: proposal.simulationResults.stabilityScore,
+                    metrics: { ...proposal.simulationResults.metrics },
+                    logs: [...proposal.simulationResults.logs]
+                }
                 : null,
             economicConstraints: {
                 budgetLimit: proposal.economicConstraints.budgetLimit,
@@ -226,14 +234,18 @@ export class ProposalSubmissionEngine {
                 requiredMinROI: proposal.economicConstraints.requiredMinROI,
                 projectedROI: proposal.economicConstraints.projectedROI
             },
+            governanceMetadata: {
+                complianceProtocols: [...proposal.governanceMetadata.complianceProtocols],
+                strategicAlignmentScore: proposal.governanceMetadata.strategicAlignmentScore
+            },
             consensusScores: proposal.consensusScores
                 ? {
-                      totalAgents: proposal.consensusScores.totalAgents,
-                      approvals: proposal.consensusScores.approvals,
-                      abstentions: proposal.consensusScores.abstentions,
-                      disapprovals: proposal.consensusScores.disapprovals,
-                      consensusReached: proposal.consensusScores.consensusReached
-                  }
+                    totalAgents: proposal.consensusScores.totalAgents,
+                    approvals: proposal.consensusScores.approvals,
+                    abstentions: proposal.consensusScores.abstentions,
+                    disapprovals: proposal.consensusScores.disapprovals,
+                    consensusReached: proposal.consensusScores.consensusReached
+                }
                 : null
         });
     }
