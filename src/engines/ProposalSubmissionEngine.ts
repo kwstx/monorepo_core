@@ -2,11 +2,17 @@ import {
     ConsensusScore,
     EconomicConstraints,
     GovernanceMetadata,
+    ImpactAssessment,
     ProposalStatus,
     ProposalType,
     SelfModificationProposal,
     SimulationResult
 } from '../models/SelfModificationProposal';
+import { ImpactAssessmentEngine } from './ImpactAssessmentEngine';
+import {
+    PolicyValidationLayer,
+    PolicyViolation
+} from './PolicyValidationLayer';
 
 export enum SubmissionFailureCode {
     INVALID_PROPOSAL = 'INVALID_PROPOSAL',
@@ -67,16 +73,28 @@ export type ProposalSnapshot = {
     economicConstraints: EconomicConstraints;
     governanceMetadata: GovernanceMetadata;
     consensusScores: ConsensusScore | null;
+    impactAssessment: ImpactAssessment | null;
 };
+
+export interface RejectedProposalRecord {
+    queueId: string;
+    proposalId: string;
+    rejectedAt: Date;
+    violations: readonly PolicyViolation[];
+    proposalSnapshot: Readonly<ProposalSnapshot>;
+}
 
 export class ProposalSubmissionEngine {
     private readonly queue: ProposalQueueEntry[] = [];
+    private readonly rejectedByPolicy: RejectedProposalRecord[] = [];
     private nextQueueSequence = 1;
 
     constructor(
         private readonly identities: AgentIdentityRegistry,
         private readonly digestProvider: DigestProvider,
-        private readonly signatureVerifier: SignatureVerifier
+        private readonly signatureVerifier: SignatureVerifier,
+        private readonly assessmentEngine: ImpactAssessmentEngine = new ImpactAssessmentEngine(),
+        private readonly policyValidationLayer: PolicyValidationLayer = new PolicyValidationLayer()
     ) { }
 
     submit(envelope: SubmissionEnvelope): ProposalQueueEntry {
@@ -114,6 +132,10 @@ export class ProposalSubmissionEngine {
             );
         }
 
+        // Perform impact assessment before queuing
+        const assessment = this.assessmentEngine.assess(proposal);
+        proposal.updateImpactAssessment(assessment);
+
         const queueEntry: ProposalQueueEntry = {
             queueId: this.buildQueueId(proposal.id),
             proposalId: proposal.id,
@@ -136,8 +158,35 @@ export class ProposalSubmissionEngine {
     }
 
     dequeueForEvaluation(): ProposalQueueEntry | null {
-        const next = this.queue.shift();
-        return next ?? null;
+        while (this.queue.length > 0) {
+            const next = this.queue.shift()!;
+            const validation = this.policyValidationLayer.validate(next.proposalSnapshot);
+
+            if (validation.passed) {
+                return next;
+            }
+
+            this.rejectedByPolicy.push({
+                queueId: next.queueId,
+                proposalId: next.proposalId,
+                rejectedAt: new Date(),
+                violations: validation.violations,
+                proposalSnapshot: deepFreeze({
+                    ...next.proposalSnapshot,
+                    status: ProposalStatus.REJECTED
+                })
+            });
+        }
+
+        return null;
+    }
+
+    getPolicyRejections(): readonly RejectedProposalRecord[] {
+        return this.rejectedByPolicy.map((record) => ({
+            ...record,
+            rejectedAt: new Date(record.rejectedAt.getTime()),
+            violations: record.violations.map((violation) => ({ ...violation }))
+        }));
     }
 
     private buildQueueId(proposalId: string): string {
@@ -174,6 +223,16 @@ export class ProposalSubmissionEngine {
                 'Estimated cost exceeds proposal budget limit.'
             );
         }
+
+        if (
+            proposal.governanceMetadata.strategicAlignmentScore < 0 ||
+            proposal.governanceMetadata.strategicAlignmentScore > 1
+        ) {
+            throw new ProposalSubmissionError(
+                SubmissionFailureCode.INVALID_PROPOSAL,
+                'Strategic alignment score must be between 0.0 and 1.0.'
+            );
+        }
     }
 
     private createImmutableSnapshot(proposal: SelfModificationProposal): Readonly<ProposalSnapshot> {
@@ -200,7 +259,8 @@ export class ProposalSubmissionEngine {
                 ...proposal.governanceMetadata,
                 complianceProtocols: [...proposal.governanceMetadata.complianceProtocols]
             },
-            consensusScores: proposal.consensusScores ? { ...proposal.consensusScores } : null
+            consensusScores: proposal.consensusScores ? { ...proposal.consensusScores } : null,
+            impactAssessment: proposal.impactAssessment ? { ...proposal.impactAssessment, synergyMetrics: { ...proposal.impactAssessment.synergyMetrics } } : null
         };
 
         return deepFreeze(snapshot);

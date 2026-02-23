@@ -4,6 +4,10 @@ import {
     SimulationResult,
     SimulationMetrics
 } from '../models/SelfModificationProposal';
+import {
+    PolicyValidationLayer,
+    PolicyViolation
+} from './PolicyValidationLayer';
 
 /**
  * SandboxEvaluationEngine
@@ -12,6 +16,9 @@ import {
  * Evaluates downstream effects, agent cooperation impacts, and vocational performance outcomes.
  */
 export class SandboxEvaluationEngine {
+    constructor(
+        private readonly policyValidationLayer: PolicyValidationLayer = new PolicyValidationLayer()
+    ) {}
 
     /**
      * Evaluates a proposal by running it in a simulated sandbox.
@@ -19,8 +26,32 @@ export class SandboxEvaluationEngine {
      * @returns A promise that resolves to the simulation result.
      */
     public async evaluate(proposal: SelfModificationProposal): Promise<SimulationResult> {
-        proposal.status = ProposalStatus.SIMULATING;
         const logs: string[] = [];
+        const policyValidation = this.policyValidationLayer.validate(proposal);
+
+        if (!policyValidation.passed) {
+            proposal.status = ProposalStatus.REJECTED;
+            logs.push(`[${new Date().toISOString()}] Policy validation failed for proposal: ${proposal.id}`);
+            logs.push(...this.buildViolationLogs(policyValidation.violations));
+
+            const rejectedResult: SimulationResult = {
+                success: false,
+                performanceDelta: 0,
+                resourceUsageDelta: 0,
+                stabilityScore: 0,
+                metrics: {
+                    downstreamEffects: 0,
+                    cooperationImpact: 0,
+                    vocationalOutcome: 0
+                },
+                logs
+            };
+
+            proposal.updateSimulationResults(rejectedResult);
+            return rejectedResult;
+        }
+
+        proposal.status = ProposalStatus.SIMULATING;
 
         logs.push(`[${new Date().toISOString()}] Starting sandbox simulation for proposal: ${proposal.id}`);
         logs.push(`[${new Date().toISOString()}] Initializing isolated environment...`);
@@ -91,5 +122,12 @@ export class SandboxEvaluationEngine {
 
     private delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    private buildViolationLogs(violations: PolicyViolation[]): string[] {
+        return violations.map(
+            (violation) =>
+                `[${new Date().toISOString()}] [POLICY:${violation.domain}] ${violation.ruleId} - ${violation.message}`
+        );
     }
 }

@@ -36,6 +36,21 @@ export interface EconomicConstraints {
     projectedROI: number;
 }
 
+export interface SynergyMetrics {
+    crossModuleOptimization: number; // 0.0 to 1.0
+    agentCollaborationEfficiency: number; // 0.0 to 1.0
+    resourceSharingPotential: number; // 0.0 to 1.0
+}
+
+export interface ImpactAssessment {
+    predictedEconomicCost: number;
+    projectedROI: number;
+    riskScore: number; // 0.0 to 1.0
+    synergyMetrics: SynergyMetrics;
+    recommendation: 'ALLOW' | 'BLOCK' | 'FLAG';
+    timestamp: Date;
+}
+
 export interface GovernanceMetadata {
     complianceProtocols: string[];
     strategicAlignmentScore: number; // 0.0 to 1.0
@@ -73,6 +88,9 @@ export class SelfModificationProposal {
     // Multi-agent consensus
     consensusScores?: ConsensusScore;
 
+    // Detailed impact assessment
+    impactAssessment?: ImpactAssessment;
+
     constructor(data: {
         id: string;
         type: ProposalType;
@@ -105,5 +123,9 @@ export class SelfModificationProposal {
 
     public updateConsensusScores(scores: ConsensusScore) {
         this.consensusScores = scores;
+    }
+
+    public updateImpactAssessment(assessment: ImpactAssessment) {
+        this.impactAssessment = assessment;
     }
 }
