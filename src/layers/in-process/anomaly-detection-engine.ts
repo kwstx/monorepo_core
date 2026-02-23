@@ -7,6 +7,7 @@ import {
     InProcessMonitorPolicy
 } from '../../core/models';
 import { ViolationPropagationModule } from '../../core/violation-propagation';
+import { ThresholdAdaptationEngine } from '../../core/threshold-adaptation-engine';
 
 export interface AnomalyDetectionDecision {
     deviationScore: number;
@@ -20,6 +21,7 @@ export class AnomalyDetectionEngine {
     private readonly thresholds: AnomalyToleranceThresholds;
     private readonly actionDelayMs: number;
     private propagationModule: ViolationPropagationModule;
+    private adaptationEngine: ThresholdAdaptationEngine;
 
     constructor(thresholds?: Partial<AnomalyToleranceThresholds>, actionDelayMs: number = 250) {
         this.thresholds = {
@@ -30,6 +32,7 @@ export class AnomalyDetectionEngine {
         };
         this.actionDelayMs = actionDelayMs;
         this.propagationModule = ViolationPropagationModule.getInstance();
+        this.adaptationEngine = ThresholdAdaptationEngine.getInstance();
     }
 
     public async enforceDelayIfNeeded(action: AnomalyMitigationAction): Promise<void> {
@@ -61,18 +64,26 @@ export class AnomalyDetectionEngine {
 
     private resolveAction(score: number): { action: AnomalyMitigationAction, threshold: number | null } {
         const { thresholdTightness } = this.propagationModule.getPropagationParameters();
+        const { anomalySensitivity, precisionWeight } = this.adaptationEngine.getCurrentProfile();
+
+        // Higher precisionWeight (e.g. 0.8) favors autonomy (higher thresholds = less likely to flag)
+        const weightFactor = 1.0 + (precisionWeight - 0.5) * 0.4;
 
         // Apply tightness: higher tightness reduces the effective threshold
-        // e.g., if tightness is 0.5, a 0.8 threshold becomes 0.4
-        const adjust = (t: number) => Math.max(0.05, t * (1.0 - (thresholdTightness * 0.7)));
+        // Apply sensitivity: higher sensitivity reduces the effective threshold
+        const adjust = (t: number) => {
+            // Sensitivity 2.0 makes 0.8 -> 0.4. Sensitivity 0.5 makes 0.8 -> 1.0 (clamped)
+            const sensBase = (t * weightFactor) / anomalySensitivity;
+            return Math.max(0.05, Math.min(0.95, sensBase * (1.0 - (thresholdTightness * 0.7))));
+        };
 
         const tHalt = adjust(this.thresholds.halt);
         const tApproval = adjust(this.thresholds.requireApproval);
         const tSlow = adjust(this.thresholds.slow);
         const tWarn = adjust(this.thresholds.warn);
 
-        if (thresholdTightness > 0) {
-            console.log(`[AnomalyDetectionEngine] Applying threshold tightness: ${thresholdTightness.toFixed(2)}. Adjusted HALT threshold: ${tHalt.toFixed(2)}`);
+        if (thresholdTightness > 0 || anomalySensitivity !== 1.0 || precisionWeight !== 0.5) {
+            console.log(`[AnomalyDetectionEngine] Adjustments (Tightness: ${thresholdTightness.toFixed(2)}, Sensitivity: ${anomalySensitivity.toFixed(2)}, Weight: ${precisionWeight.toFixed(2)}). HALT threshold: ${tHalt.toFixed(2)}`);
         }
 
         if (score >= tHalt) {

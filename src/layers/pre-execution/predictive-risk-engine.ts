@@ -1,11 +1,14 @@
 import { ActionContext, RiskProfile, SynergyShift, PropagationEffect, PolicyForecast, BehaviorVector } from '../../core/models';
 import { ViolationPropagationModule } from '../../core/violation-propagation';
+import { ThresholdAdaptationEngine } from '../../core/threshold-adaptation-engine';
 
 export class PredictiveRiskEngine {
     private propagationModule: ViolationPropagationModule;
+    private adaptationEngine: ThresholdAdaptationEngine;
 
     constructor() {
         this.propagationModule = ViolationPropagationModule.getInstance();
+        this.adaptationEngine = ThresholdAdaptationEngine.getInstance();
     }
 
     /**
@@ -148,6 +151,19 @@ export class PredictiveRiskEngine {
         if (riskMultiplier > 1.0) {
             console.log(`[PredictiveRiskEngine] Applying violation propagation risk multiplier: ${riskMultiplier.toFixed(2)}`);
             score *= riskMultiplier;
+        }
+
+        // Apply long-term adaptation risk tolerance and precision weight
+        const { riskTolerance, precisionWeight } = this.adaptationEngine.getCurrentProfile();
+
+        // Higher precisionWeight (e.g. 0.8) favors autonomy (lower risk scores)
+        // Lower precisionWeight (e.g. 0.2) favors security (higher risk scores)
+        const weightFactor = 1.0 - (precisionWeight - 0.5) * 0.3;
+
+        const effectiveMultiplier = riskTolerance * weightFactor;
+        if (effectiveMultiplier !== 1.0) {
+            console.log(`[PredictiveRiskEngine] Applying adaptation multiplier: ${effectiveMultiplier.toFixed(2)} (Tolerance: ${riskTolerance.toFixed(2)}, PrecisionWeight: ${precisionWeight.toFixed(2)})`);
+            score *= effectiveMultiplier;
         }
 
         return Math.min(1.0, score);

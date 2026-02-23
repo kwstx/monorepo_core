@@ -275,3 +275,32 @@ export interface Intervention {
     applied: boolean;
     metadata: Record<string, any>;
 }
+
+export interface HistoricalOutcome {
+    actionId: string;
+    timestamp: Date;
+    violationsDetected: Violation[];
+    interventionsApplied: Intervention[];
+    realWorldImpact: number; // 0.0 (good) to 1.0 (disastrous)
+    isFalsePositive: boolean;
+    wasUnderRestricted: boolean; // True if we missed a violation (false negative)
+    wasOverRestricted: boolean; // True if we blocked a valid action (false positive/over-sensitive)
+}
+
+export interface ThresholdAdaptationProfile {
+    riskTolerance: number; // 0.1 to 2.0 (multiplier for risk sensitivity)
+    anomalySensitivity: number; // 0.1 to 2.0 (multiplier for anomaly detection sensitivity)
+    precisionWeight: number; // 0.0 to 1.0 (how much to favor precision over recall)
+    lastAdaptation: Date;
+}
+
+export interface ThresholdAdaptationReport {
+    previousProfile: ThresholdAdaptationProfile;
+    updatedProfile: ThresholdAdaptationProfile;
+    adaptationReason: string;
+    metrics: {
+        falsePositiveRate: number;
+        missedViolationRate: number;
+        averageImpact: number;
+    };
+}
