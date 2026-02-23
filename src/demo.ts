@@ -137,6 +137,12 @@ for (const action of proposedActions) {
 
     console.log(`${action.actionId} (${action.actionType}) => ${result.decision.toUpperCase()}`);
     console.log(` Reasons: ${result.reasons.join(' | ')}`);
+    console.log(
+        ` Predictive: ROI=${result.predictiveAssessment.expectedRoi.toFixed(2)}, ` +
+        `Synergy=${(result.predictiveAssessment.cooperativeSynergy * 100).toFixed(1)}%, ` +
+        `DownstreamScore=${(result.predictiveAssessment.downstreamImpactScore * 100).toFixed(1)}%, ` +
+        `EffectiveBudget=${result.predictiveAssessment.effectiveAvailableBudget.toFixed(2)}`
+    );
 
     if (result.decision === 'allow' || result.decision === 'flag') {
         const totalCooperativeSupport = (action.cooperativeContributions ?? []).reduce((sum, item) => sum + (item.amount * item.confidence), 0);

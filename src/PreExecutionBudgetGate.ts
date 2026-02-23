@@ -42,6 +42,17 @@ export interface AllocationSnapshot {
   unit: string;
 }
 
+export interface PredictiveAssessment {
+  expectedRoi: number;
+  cooperativeSynergy: number; // 0..1
+  downstreamImpactScore: number; // 0..1
+  compositePriorityScore: number; // 0..1
+  dynamicBudgetMultiplier: number;
+  baselineRemainingBudget: number;
+  effectiveAvailableBudget: number;
+  weightedCooperativeSupport: number;
+}
+
 export interface BlockedActionLog {
   timestamp: string;
   gate: 'PreExecutionBudgetGate';
@@ -61,6 +72,7 @@ export interface BlockedActionLog {
     weightedSupport: number;
     contributors: CooperativeContribution[];
   };
+  predictiveAssessment: PredictiveAssessment;
   potentialRoiLost: number;
 }
 
@@ -68,6 +80,7 @@ export interface GateEvaluationResult {
   decision: GateDecision;
   reasons: string[];
   allocationSnapshot: AllocationSnapshot;
+  predictiveAssessment: PredictiveAssessment;
   blockedLog?: BlockedActionLog;
 }
 
@@ -135,6 +148,66 @@ function computeWeightedSupport(contributions: CooperativeContribution[] = []): 
   }, 0);
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function buildPredictiveAssessment(
+  action: ProposedAgentAction,
+  baselineRemainingBudget: number
+): PredictiveAssessment {
+  const impact = aggregateDownstreamImpact(action.predictedDownstreamImpact);
+  const weightedCooperativeSupport = computeWeightedSupport(action.cooperativeContributions);
+  const contributorCount = new Set((action.cooperativeContributions ?? []).map((item) => item.contributorAgentId)).size;
+
+  const expectedDownstreamNet = impact.totalExpectedBenefit - impact.totalExpectedAdditionalCost;
+  const directProjectedNet = (action.projectedReturn ?? 0) - action.estimatedCost;
+  const expectedNetValue = directProjectedNet + expectedDownstreamNet;
+  const expectedRoi = action.estimatedCost <= 0 ? 0 : expectedNetValue / action.estimatedCost;
+
+  const normalizedSupport = action.estimatedCost <= 0 ? 0 : weightedCooperativeSupport / action.estimatedCost;
+  const collaborationDiversity = clamp(contributorCount / 3, 0, 1);
+  const cooperativeSynergy = clamp((normalizedSupport * 0.7) + (collaborationDiversity * 0.3), 0, 1);
+
+  const impactDenominator = impact.totalExpectedBenefit + impact.totalExpectedAdditionalCost + Math.max(action.estimatedCost, 1);
+  const downstreamImpactScore = impactDenominator <= 0 ? 0 : clamp(impact.totalExpectedBenefit / impactDenominator, 0, 1);
+
+  const roiSignal = Math.tanh(expectedRoi);
+  const positiveRoiBoost = Math.max(0, roiSignal) * 0.35;
+  const negativeRoiPenalty = Math.max(0, -roiSignal) * 0.35;
+  const synergyBoost = cooperativeSynergy * 0.2;
+  const downstreamBoost = downstreamImpactScore * 0.15;
+
+  const dynamicBudgetMultiplier = clamp(
+    1 + positiveRoiBoost + synergyBoost + downstreamBoost - negativeRoiPenalty,
+    0.7,
+    1.6
+  );
+
+  const effectiveAvailableBudget = Math.max(
+    0,
+    (baselineRemainingBudget * dynamicBudgetMultiplier) + weightedCooperativeSupport
+  );
+
+  const normalizedRoiScore = (roiSignal + 1) / 2;
+  const compositePriorityScore = clamp(
+    (normalizedRoiScore * 0.55) + (cooperativeSynergy * 0.25) + (downstreamImpactScore * 0.2),
+    0,
+    1
+  );
+
+  return {
+    expectedRoi,
+    cooperativeSynergy,
+    downstreamImpactScore,
+    compositePriorityScore,
+    dynamicBudgetMultiplier,
+    baselineRemainingBudget,
+    effectiveAvailableBudget,
+    weightedCooperativeSupport
+  };
+}
+
 export function PreExecutionBudgetGate(
   budget: AgentBudget,
   action: ProposedAgentAction,
@@ -160,7 +233,7 @@ export function PreExecutionBudgetGate(
 
     const reason = `No allocation found for resource type "${action.resourceType}".`;
     const impact = aggregateDownstreamImpact(action.predictedDownstreamImpact);
-    const weightedSupport = computeWeightedSupport(action.cooperativeContributions);
+    const predictiveAssessment = buildPredictiveAssessment(action, 0);
     const blockedLog: BlockedActionLog = {
       timestamp: new Date().toISOString(),
       gate: 'PreExecutionBudgetGate',
@@ -176,9 +249,10 @@ export function PreExecutionBudgetGate(
         scenarios: action.predictedDownstreamImpact ?? []
       },
       cooperativeContributions: {
-        weightedSupport,
+        weightedSupport: predictiveAssessment.weightedCooperativeSupport,
         contributors: action.cooperativeContributions ?? []
       },
+      predictiveAssessment,
       potentialRoiLost: Math.max(0, (action.projectedReturn ?? 0) - action.estimatedCost)
     };
 
@@ -188,12 +262,15 @@ export function PreExecutionBudgetGate(
       decision: 'block',
       reasons: [reason],
       allocationSnapshot: snapshot,
+      predictiveAssessment,
       blockedLog
     };
   }
 
   const cappedTotalBudget = getDelegationCappedTotal(budget, allocation, parentBudget);
   const remainingBudget = cappedTotalBudget - allocation.spentBudget - allocation.pendingAllocations;
+  const predictiveAssessment = buildPredictiveAssessment(action, remainingBudget);
+  const effectiveAvailableBudget = predictiveAssessment.effectiveAvailableBudget;
   const utilizationAfterAction = cappedTotalBudget <= 0
     ? 1
     : (allocation.spentBudget + allocation.pendingAllocations + action.estimatedCost) / cappedTotalBudget;
@@ -234,16 +311,14 @@ export function PreExecutionBudgetGate(
     }
   }
 
-  if (action.estimatedCost > remainingBudget) {
+  if (action.estimatedCost > effectiveAvailableBudget) {
     reasons.push(
-      `Estimated cost (${action.estimatedCost} ${allocation.unit}) exceeds remaining budget (${remainingBudget} ${allocation.unit}) for ${allocation.resourceType}.`
+      `Estimated cost (${action.estimatedCost} ${allocation.unit}) exceeds dynamic effective budget (${effectiveAvailableBudget.toFixed(2)} ${allocation.unit}) for ${allocation.resourceType}.`
     );
   }
 
   if (reasons.length > 0) {
     const impact = aggregateDownstreamImpact(action.predictedDownstreamImpact);
-    const weightedSupport = computeWeightedSupport(action.cooperativeContributions);
-
     const potentialRoiLost = Math.max(0, (action.projectedReturn ?? 0) - action.estimatedCost) + impact.totalExpectedBenefit;
 
     const blockedLog: BlockedActionLog = {
@@ -261,9 +336,10 @@ export function PreExecutionBudgetGate(
         scenarios: action.predictedDownstreamImpact ?? []
       },
       cooperativeContributions: {
-        weightedSupport,
+        weightedSupport: predictiveAssessment.weightedCooperativeSupport,
         contributors: action.cooperativeContributions ?? []
       },
+      predictiveAssessment,
       potentialRoiLost
     };
 
@@ -273,23 +349,52 @@ export function PreExecutionBudgetGate(
       decision: 'block',
       reasons,
       allocationSnapshot,
+      predictiveAssessment,
       blockedLog
     };
   }
 
+  if (action.estimatedCost > remainingBudget) {
+    return {
+      decision: 'flag',
+      reasons: [
+        `Estimated cost exceeds baseline remaining budget (${remainingBudget} ${allocation.unit}) but is permitted by predictive adjustment (effective budget ${effectiveAvailableBudget.toFixed(2)} ${allocation.unit}, priority ${(predictiveAssessment.compositePriorityScore * 100).toFixed(1)}%).`
+      ],
+      allocationSnapshot,
+      predictiveAssessment
+    };
+  }
+
   if (utilizationAfterAction >= threshold) {
+    const highPriorityThreshold = 0.65;
+    if (
+      predictiveAssessment.compositePriorityScore >= highPriorityThreshold &&
+      predictiveAssessment.cooperativeSynergy >= 0.35
+    ) {
+      return {
+        decision: 'allow',
+        reasons: [
+          `High-priority collaborative action accepted near utilization limit (priority ${(predictiveAssessment.compositePriorityScore * 100).toFixed(1)}%, synergy ${(predictiveAssessment.cooperativeSynergy * 100).toFixed(1)}%).`
+        ],
+        allocationSnapshot,
+        predictiveAssessment
+      };
+    }
+
     return {
       decision: 'flag',
       reasons: [
         `Action stays within budget but drives utilization to ${(utilizationAfterAction * 100).toFixed(2)}%, above threshold ${(threshold * 100).toFixed(2)}%.`
       ],
-      allocationSnapshot
+      allocationSnapshot,
+      predictiveAssessment
     };
   }
 
   return {
     decision: 'allow',
     reasons: ['Action is within current allocation and budget status is active.'],
-    allocationSnapshot
+    allocationSnapshot,
+    predictiveAssessment
   };
 }
