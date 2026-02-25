@@ -1,3 +1,4 @@
+import { Logger } from '@shared/logger';
 import type { AgentBudget, ResourceAllocation, ResourceType } from './models/AgentBudget.js';
 
 export type GateDecision = 'allow' | 'flag' | 'block';
@@ -215,7 +216,7 @@ export function PreExecutionBudgetGate(
 ): GateEvaluationResult {
   const threshold = options.flagUtilizationThreshold ?? DEFAULT_FLAG_UTILIZATION_THRESHOLD;
   const parentBudget = options.parentBudget;
-  const logger = options.logger ?? ((entry: BlockedActionLog) => console.warn('[PreExecutionBudgetGate]', JSON.stringify(entry, null, 2)));
+  const logger = options.logger ?? ((entry: BlockedActionLog) => Logger.warn(`[PreExecutionBudgetGate] ${JSON.stringify(entry, null, 2)}`));
 
   const allocation = findAllocation(budget, action.resourceType);
 

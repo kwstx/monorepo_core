@@ -1,0 +1,21 @@
+# Root dependencies for all Python-based modules in the monorepo
+# (actionable_logic, simulation_layer, task_formation)
+
+# Core Logic & Data Modeling
+pydantic>=2.0.0
+numpy>=1.24.0
+
+# API & Web Server
+fastapi>=0.100.0
+uvicorn>=0.23.0
+httpx>=0.24.0
+
+# Database & Data Science
+sqlalchemy>=2.0.0
+pandas>=2.0.0
+
+# Testing & Development
+pytest>=7.4.0
+black>=23.7.0
+isort>=5.12.0
+mypy>=1.4.0

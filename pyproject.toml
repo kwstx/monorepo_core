@@ -1,0 +1,25 @@
+[project]
+name = "agent-infra-monorepo"
+version = "1.0.0"
+description = "Consolidated Python dependencies for agent-infrastructure monorepo"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+    "numpy>=1.24.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "httpx>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "pandas>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.7.0",
+    "isort>=5.12.0",
+    "mypy>=1.4.0",
+]
+
+[tool.setuptools]
+packages = ["shared_utils", "actionable_logic", "simulation_layer", "task_formation"]

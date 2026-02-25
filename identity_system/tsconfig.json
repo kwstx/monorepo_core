@@ -8,9 +8,15 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "outDir": "./dist",
-        "rootDir": "./src"
+        "baseUrl": ".",
+        "paths": {
+            "@shared/*": [
+                "../shared_utils/typescript/*"
+            ]
+        }
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "../shared_utils/typescript/**/*"
     ]
 }

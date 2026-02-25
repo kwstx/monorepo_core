@@ -1,5 +1,14 @@
 import copy
 import logging
+import sys
+import os
+
+# Support for monorepo shared imports
+monorepo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+if monorepo_root not in sys.path:
+    sys.path.append(monorepo_root)
+
+from shared_utils.python.logger import get_logger
 from typing import Any, Dict, List, Union, Optional
 from pydantic import BaseModel, Field
 from src.models.policy import PolicySchema, TransformationOperator, InfluenceTransformation, ExecutableConstraint
@@ -19,7 +28,7 @@ class SimulationResult(BaseModel):
     violations: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class PolicyInjectionSimulator:
     """

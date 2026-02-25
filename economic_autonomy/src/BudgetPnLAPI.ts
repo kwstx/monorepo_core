@@ -1,4 +1,5 @@
 import express, { type Request, type Response } from 'express';
+import { Logger } from '@shared/logger';
 import type { AgentBudget } from './models/AgentBudget.js';
 import { PnLTracker, type ActionPnLInput } from './PnLTracker.js';
 import { TreasuryEngine } from './TreasuryEngine.js';
@@ -291,12 +292,12 @@ app.post('/visualization/health', (req: Request, res: Response) => {
 
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`\n🚀 BudgetPnLAPI listening on http://localhost:${PORT}`);
-    console.log(`Endpoints available:`);
-    console.log(` - GET  /budget/:agentId`);
-    console.log(` - POST /budget/allocate`);
-    console.log(` - POST /pnl/report`);
-    console.log(` - POST /budget/simulate`);
-    console.log(` - POST /treasury/pool`);
-    console.log(` - POST /visualization/health`);
+    Logger.info(`\n🚀 BudgetPnLAPI listening on http://localhost:${PORT}`);
+    Logger.info(`Endpoints available:`);
+    Logger.info(` - GET  /budget/:agentId`);
+    Logger.info(` - POST /budget/allocate`);
+    Logger.info(` - POST /pnl/report`);
+    Logger.info(` - POST /budget/simulate`);
+    Logger.info(` - POST /treasury/pool`);
+    Logger.info(` - POST /visualization/health`);
 });

@@ -30,7 +30,6 @@ export interface SignedAgentIdentity {
     signature: string;
 }
 
-export interface KeyPair {
-    publicKey: string;
-    privateKey: string;
-}
+import { KeyPair } from '@shared/types';
+
+export { KeyPair };
