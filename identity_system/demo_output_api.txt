@@ -1,0 +1,162 @@
+﻿
+========================================================================
+  SETUP: Building Identity Ecosystem
+========================================================================
+Created agent: agent_80c9b568-b817-4c5b-810c-87e505da2818
+Created agent: agent_9817ffaf-3ccc-4b09-a5a7-78ff47fb90a2
+Organizational graph built
+Delegation created: dlg_c1t177iw_1771801833327
+Authority graph: 8 can_execute, 1 requires_approval, 2 prohibited
+Portable authority token created
+
+========================================================================
+  CREATING IdentityAuthorityAPI
+========================================================================
+API created with platform ID: demo-platform-001
+
+========================================================================
+  1. VERIFY AGENT IDENTITY
+========================================================================
+Success: true
+Identity Valid: true
+Agent ID: agent_80c9b568-b817-4c5b-810c-87e505da2818
+Revoked: false
+Remaining Validity: 30 days
+Token Verification: verified
+
+--- Authority Proof ---
+Decision: authorized
+Summary: Agent identity is cryptographically valid and not revoked
+Evidence Chain (2 items):
+  [identity_core] Cryptographic signature and expiration checks passed (supports: true)
+  [authority_protocol] Portable token verified (trust chain: verified) (supports: true)
+
+--- Cross-Platform Metadata ---
+Response ID: b591e49c-d700-4034-aae2-5078fe3edd60
+Platform: demo-platform-001
+API Version: 1.0.0
+Digest: fd23e21d2dd30c44...
+Processing Time: 3ms
+Trace ID: 75388158-118d-4597-926a-4cb47f0404cb
+
+========================================================================
+  2. RETRIEVE AUTHORITY GRAPH
+========================================================================
+Success: true
+
+--- Graph Statistics ---
+Total Rules: 11
+Can Execute: 8
+Requires Approval: 1
+Prohibited: 2
+Delegations: 1
+Nodes: 17
+Edges: 17
+
+--- Active Delegations ---
+  dlg_c1t177iw_1771801833327: owner_alice -> agent_80c9b568-b817-4c5b-810c-87e505da2818 [service:payments] (active)
+
+--- Authority Proof ---
+Decision: authorized
+Summary: Authority graph generated with 8 executable, 1 approval-required, and 2 prohibited rules. 1 active delegation(s).
+
+--- Cross-Platform Metadata ---
+Digest: 8b3ef0ddfa0be65a...
+Trace ID: f353f5d7-2106-429a-9e51-1a441fc87270
+
+========================================================================
+  3. VALIDATE PROPOSED ACTION
+========================================================================
+
+--- 3a. Action that should succeed (repo read in dev) ---
+[AUDIT] ALLOWED - agent_80c9b568-b817-4c5b-810c-87e505da2818 -> read on repo:my-service (audit-0a8dced0-29d8-4880-8b24-462af5fb2ab4)
+Authorized: true
+Is Delegated: false
+Violations: 0
+Enforcement Allowed: true
+Anomalies: 0
+Proof Decision: authorized
+
+--- 3b. Action requiring approval (deploy to payments) ---
+Authorized: true
+Violations:
+  [warning] APPROVAL_REQUIRED: Deployments require approval
+Approval Route Created: false
+Proof Decision: authorized
+
+--- 3c. Prohibited action (production DB write) ---
+Authorized: false
+Violations:
+  [error] SCOPE_VIOLATION: Direct production DB writes prohibited
+  [error] CONTEXT_MISMATCH: Action target environment 'production' is not authorized for this agent's current identity.
+Proof Decision: denied
+
+========================================================================
+  4. QUERY DELEGATION CHAINS
+========================================================================
+
+--- 4a. Trace a specific delegation ---
+Chain Depth: 1
+Records:
+  [depth 0] owner_alice -> agent_80c9b568-b817-4c5b-810c-87e505da2818 [service:payments] (active)
+Proof Decision: authorized
+
+--- 4b. List all delegations for the agent ---
+Found 1 delegation(s) for agent
+  dlg_c1t177iw_1771801833327: owner_alice granted [service:payments]
+
+========================================================================
+  5. SIMULATE APPROVAL REQUIREMENTS
+========================================================================
+
+--- 5a. Deploying to payments (should require approval) ---
+Requires Approval: true
+Route ID: e5db71ac-b1b1-4506-bef3-dc52ca502fb8
+Domains: managerial, cross_departmental
+Estimated Approver Count: 2
+Reasons: Deployments require approval; Cross-department dependency requires target department approval.; Cross-departmental actions require target department sign-off
+Steps:
+  Step "sequential_1_managerial" | Domains: managerial | Approvers: owner_alice | Policy: any | Status: pending
+  Step "sequential_2_cross_departmental" | Domains: cross_departmental | Approvers: cto | Policy: all | Status: locked
+
+--- Authority Proof ---
+Decision: requires_approval
+Summary: Approval required: Deployments require approval; Cross-department dependency requires target department approval.; Cross-departmental actions require target department sign-off
+Evidence:
+  [action_validation] Action requires approval based on authority graph and routing rules
+  [approval_routing] Step "sequential_1_managerial" requires 1 approver(s) across domains [managerial] with "any" policy
+  [approval_routing] Step "sequential_2_cross_departmental" requires 1 approver(s) across domains [cross_departmental] with "all" policy
+
+--- 5b. Reading a repo (should NOT require approval) ---
+Requires Approval: false
+Proof Decision: authorized
+
+========================================================================
+  6. BATCH VERIFY IDENTITIES
+========================================================================
+Total: 2
+Valid: 1
+Invalid: 1
+Results:
+  agent_80c9b568-b817-4c5b-810c-87e505da2818: VALID
+  agent_9817ffaf-3ccc-4b09-a5a7-78ff47fb90a2: INVALID (Identity has been revoked)
+
+--- Cross-Platform Metadata ---
+Digest: 30fa85fba78faf1a...
+Trace ID: f99a412a-8f78-4253-ae14-e1a48a19fc24
+
+========================================================================
+  DEMO COMPLETE
+========================================================================
+
+The IdentityAuthorityAPI provides:
+  1. verifyIdentity()              - Cryptographic identity + token verification
+  2. retrieveAuthorityGraph()       - Full permission model for an agent
+  3. validateAction()               - Scope, delegation, context, and enforcement checks
+  4. queryDelegationChain()          - Trace delegation inheritance
+  5. simulateApprovalRequirements()  - Predict approval workflows without side effects
+  6. batchVerifyIdentities()         - Bulk identity verification
+
+Every response includes:
+  - StructuredAuthorityProof     (evidence chain, cryptographic assertions, graph fragment)
+  - CrossPlatformVerificationMetadata (digest, trace ID, platform ID, timing)

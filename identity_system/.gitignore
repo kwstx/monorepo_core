@@ -1,0 +1,5 @@
+node_modules
+dist
+demo_output.txt
+package-lock.json
+.env
