@@ -19,15 +19,18 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Run Python Tests (Isolated)
+    - name: Actionable Logic Tests
       run: |
         export PYTHONPATH=$PYTHONPATH:$(pwd)
-        echo "Running Actionable Logic tests..."
-        cd actionable_logic && pytest tests && cd ..
-        echo "Running Simulation Layer tests..."
-        cd simulation_layer && pytest tests && cd ..
-        echo "Running Task Formation tests..."
-        cd task_formation && pytest . && cd ..
+        cd actionable_logic && pytest tests
+    - name: Simulation Layer Tests
+      run: |
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
+        cd simulation_layer && pytest tests
+    - name: Task Formation Tests
+      run: |
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
+        cd task_formation && pytest .
 
   test-typescript:
     runs-on: ubuntu-latest

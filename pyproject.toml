@@ -23,3 +23,8 @@ dev = [
 
 [tool.setuptools]
 packages = ["shared_utils", "actionable_logic", "simulation_layer", "task_formation"]
+
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+testpaths = ["tests", "actionable_logic/tests", "simulation_layer/tests", "task_formation"]
+

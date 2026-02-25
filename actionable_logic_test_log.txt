@@ -1,0 +1,150 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\galan\agent-infra-monorepo
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 40 items
+
+tests\test_adaptive_guardrails.py .....                                  [ 12%]
+tests\test_cross_domain_mapper.py ..                                     [ 17%]
+tests\test_feedback_connector.py ....                                    [ 27%]
+tests\test_live_update_engine.py ...                                     [ 35%]
+tests\test_policy_api.py ....                                            [ 45%]
+tests\test_policy_conflict_detector.py ...                               [ 52%]
+tests\test_policy_enforcement.py ...                                     [ 60%]
+tests\test_repository.py ....                                            [ 70%]
+tests\test_template_extensibility.py .....                               [ 82%]
+tests\test_translation.py .                                              [ 85%]
+tests\test_universal_policy_parser.py ..                                 [ 90%]
+tests\test_version_control.py ....                                       [100%]
+
+============================== warnings summary ===============================
+actionable_logic/tests/test_adaptive_guardrails.py::TestAdaptiveGuardrails::test_basic_policy_violation
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_adaptive_guardrails.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_adaptive_guardrails.py: 6 warnings
+actionable_logic/tests/test_policy_api.py: 1 warning
+actionable_logic/tests/test_policy_enforcement.py: 3 warnings
+actionable_logic/tests/test_repository.py: 6 warnings
+actionable_logic/tests/test_template_extensibility.py: 6 warnings
+actionable_logic/tests/test_version_control.py: 4 warnings
+  C:\Users\galan\AppData\Roaming\Python\Python314\site-packages\pydantic\main.py:250: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+actionable_logic/tests/test_adaptive_guardrails.py::TestAdaptiveGuardrails::test_conflict_resolution_priority
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_adaptive_guardrails.py:150: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(), raw_source="Resource == 'secret' escalate", rationale="...",
+
+actionable_logic/tests/test_adaptive_guardrails.py::TestAdaptiveGuardrails::test_conflict_resolution_priority
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_adaptive_guardrails.py:157: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(), raw_source="Resource == 'secret' log", rationale="...",
+
+actionable_logic/tests/test_adaptive_guardrails.py::TestAdaptiveGuardrails::test_escalation
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_adaptive_guardrails.py:102: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_adaptive_guardrails.py::TestAdaptiveGuardrails::test_near_miss_detection
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_adaptive_guardrails.py:127: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_adaptive_guardrails.py::TestAdaptiveGuardrails::test_routing_adjustment
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_adaptive_guardrails.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_cross_domain_mapper.py::test_privacy_rule_maps_to_gdpr_and_hipaa_actions
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_cross_domain_mapper.py:14: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_feedback_connector.py::test_feedback_connector_tracks_policy_adherence_and_suggests_policy_updates
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_feedback_connector.py:14: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_feedback_connector.py::test_feedback_connector_tracks_policy_adherence_and_suggests_policy_updates
+actionable_logic/tests/test_feedback_connector.py::test_feedback_connector_tracks_policy_adherence_and_suggests_policy_updates
+actionable_logic/tests/test_feedback_connector.py::test_feedback_connector_recommends_guardrail_and_template_changes_from_low_quality_signals
+actionable_logic/tests/test_feedback_connector.py::test_feedback_connector_can_apply_guardrail_tuning
+actionable_logic/tests/test_feedback_connector.py::test_feedback_connector_can_apply_template_refinements
+  <string>:7: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+actionable_logic/tests/test_live_update_engine.py: 6 warnings
+actionable_logic/tests/test_template_extensibility.py: 4 warnings
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\translator\core.py:64: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_live_update_engine.py: 6 warnings
+actionable_logic/tests/test_template_extensibility.py: 4 warnings
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\live_update\engine.py:137: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+actionable_logic/tests/test_policy_api.py::test_push_and_query_policy
+actionable_logic/tests/test_policy_api.py::test_simulation
+actionable_logic/tests/test_policy_api.py::test_simulation
+actionable_logic/tests/test_policy_api.py::test_check_action
+  C:\Users\galan\AppData\Roaming\Python\Python314\site-packages\pydantic\type_adapter.py:441: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return self.validator.validate_python(
+
+actionable_logic/tests/test_policy_api.py: 2 warnings
+actionable_logic/tests/test_policy_conflict_detector.py: 4 warnings
+actionable_logic/tests/test_repository.py: 7 warnings
+actionable_logic/tests/test_template_extensibility.py: 4 warnings
+actionable_logic/tests/test_version_control.py: 4 warnings
+  C:\Users\galan\AppData\Roaming\Python\Python314\site-packages\sqlalchemy\sql\schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+actionable_logic/tests/test_policy_conflict_detector.py::test_detects_repository_contradictions_and_prioritizes_legal_and_safety
+actionable_logic/tests/test_policy_conflict_detector.py::test_detects_repository_contradictions_and_prioritizes_legal_and_safety
+actionable_logic/tests/test_policy_conflict_detector.py::test_detects_overlapping_workflow_enforcement_and_includes_workflow_scope
+actionable_logic/tests/test_policy_conflict_detector.py::test_detects_overlapping_workflow_enforcement_and_includes_workflow_scope
+actionable_logic/tests/test_policy_conflict_detector.py::test_audit_log_file_is_written_for_all_detected_conflicts
+actionable_logic/tests/test_policy_conflict_detector.py::test_audit_log_file_is_written_for_all_detected_conflicts
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_policy_conflict_detector.py:23: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_policy_conflict_detector.py::test_detects_repository_contradictions_and_prioritizes_legal_and_safety
+actionable_logic/tests/test_policy_conflict_detector.py::test_detects_overlapping_workflow_enforcement_and_includes_workflow_scope
+actionable_logic/tests/test_policy_conflict_detector.py::test_audit_log_file_is_written_for_all_detected_conflicts
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\enforcement\policy_conflict_detector.py:179: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp = datetime.utcnow()
+
+actionable_logic/tests/test_translation.py::test_manual_translation_flow
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_translation.py:32: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    effective_date=datetime.utcnow(),
+
+actionable_logic/tests/test_version_control.py::test_deployment_lifecycle
+actionable_logic/tests/test_version_control.py::test_rollback
+actionable_logic/tests/test_version_control.py::test_rollback
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\version_control\engine.py:46: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    created_at=datetime.utcnow()
+
+actionable_logic/tests/test_version_control.py::test_deployment_lifecycle
+actionable_logic/tests/test_version_control.py::test_rollback
+actionable_logic/tests/test_version_control.py::test_rollback
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\version_control\engine.py:95: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    record.deployed_at = datetime.utcnow()
+
+actionable_logic/tests/test_version_control.py::test_rollback
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\version_control\engine.py:136: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    created_at=datetime.utcnow(),
+
+actionable_logic/tests/test_version_control.py::test_rollback
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\version_control\engine.py:137: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    deployed_at=datetime.utcnow(),
+
+actionable_logic/tests/test_version_control.py::test_adoption_tracking_and_analytics
+actionable_logic/tests/test_version_control.py::test_adoption_tracking_and_analytics
+actionable_logic/tests/test_version_control.py::test_adoption_tracking_and_analytics
+actionable_logic/tests/test_version_control.py::test_compliance_impact_comparison
+actionable_logic/tests/test_version_control.py::test_compliance_impact_comparison
+actionable_logic/tests/test_version_control.py::test_compliance_impact_comparison
+actionable_logic/tests/test_version_control.py::test_compliance_impact_comparison
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\version_control\engine.py:166: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    adopted_at=datetime.utcnow(),
+
+actionable_logic/tests/test_version_control.py::test_adoption_tracking_and_analytics
+  C:\Users\galan\agent-infra-monorepo\actionable_logic\src\version_control\engine.py:208: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": datetime.utcnow().isoformat()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+====================== 40 passed, 110 warnings in 3.92s =======================

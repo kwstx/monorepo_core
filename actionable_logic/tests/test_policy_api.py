@@ -1,8 +1,8 @@
 import pytest
+import uuid
 from fastapi.testclient import TestClient
 from src.api.main import app
 from src.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope, LogicalCondition, ConditionOperator
-
 @pytest.fixture
 def client():
     return TestClient(app)
@@ -14,8 +14,9 @@ def test_api_root(client):
 
 def test_push_and_query_policy(client):
     # 1. Push a policy
+    policy_id = f"API-{uuid.uuid4()}"
     policy_data = {
-        "policy_id": "API-001",
+        "policy_id": policy_id,
         "title": "API Managed Policy",
         "version": "1.0.0",
         "domain": "security",
@@ -41,11 +42,12 @@ def test_push_and_query_policy(client):
     assert response.status_code == 200
     policies = response.json()
     assert len(policies) >= 1
-    assert policies[0]["policy_id"] == "API-001"
+    assert any(p["policy_id"] == policy_id for p in policies)
 
 def test_simulation(client):
+    policy_id = f"SIM-{uuid.uuid4()}"
     policy_data = {
-        "policy_id": "SIM-001",
+        "policy_id": policy_id,
         "title": "High Trust Only",
         "version": "1.0.0",
         "domain": "cooperation",
@@ -85,8 +87,9 @@ def test_simulation(client):
 
 def test_check_action(client):
     # This requires a policy to be in the repo for the mock seeder
+    policy_id = f"GUARD-{uuid.uuid4()}"
     policy_data = {
-        "policy_id": "GUARD-001",
+        "policy_id": policy_id,
         "title": "Guardrail Test",
         "version": "1.0.0",
         "domain": "security",

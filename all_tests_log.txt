@@ -1,0 +1,362 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\galan\agent-infra-monorepo
+configfile: pyproject.toml
+testpaths: tests, actionable_logic/tests, simulation_layer/tests, task_formation
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 9 items / 31 errors
+
+=================================== ERRORS ====================================
+_______________ ERROR collecting tests/test_system_integrity.py _______________
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\tests\test_system_integrity.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_system_integrity.py:25: in <module>
+    PolicyInjectionSimulator = import_module_component("simulation_layer", "src.simulation.policy_simulator", "PolicyInjectionSimulator")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_system_integrity.py:15: in import_module_component
+    mod = __import__(import_path, fromlist=[class_name])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\src\simulation\policy_simulator.py:14: in <module>
+    from src.models.policy import PolicySchema, TransformationOperator, InfluenceTransformation, ExecutableConstraint
+E   ModuleNotFoundError: No module named 'src.models.policy'
+_____ ERROR collecting actionable_logic/tests/test_adaptive_guardrails.py _____
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_adaptive_guardrails.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_adaptive_guardrails.py:8: in <module>
+    from src.live_update.engine import LiveUpdateEngine, InMemoryPolicyChangeSource, PolicyChange
+E   ModuleNotFoundError: No module named 'src.live_update'
+_____ ERROR collecting actionable_logic/tests/test_cross_domain_mapper.py _____
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_cross_domain_mapper.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_cross_domain_mapper.py:4: in <module>
+    from src.translator.cross_domain_mapper import ComplianceAction, CrossDomainMapper, OperationalContext
+E   ModuleNotFoundError: No module named 'src.translator'
+_____ ERROR collecting actionable_logic/tests/test_feedback_connector.py ______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_feedback_connector.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_feedback_connector.py:4: in <module>
+    from src.feedback.connector import FeedbackConnector, FeedbackObservation
+E   ModuleNotFoundError: No module named 'src.feedback'
+_____ ERROR collecting actionable_logic/tests/test_live_update_engine.py ______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_live_update_engine.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_live_update_engine.py:4: in <module>
+    from src.live_update.engine import (
+E   ModuleNotFoundError: No module named 'src.live_update'
+_________ ERROR collecting actionable_logic/tests/test_policy_api.py __________
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_policy_api.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_policy_api.py:4: in <module>
+    from src.api.main import app
+E   ModuleNotFoundError: No module named 'src.api.main'
+__ ERROR collecting actionable_logic/tests/test_policy_conflict_detector.py ___
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_policy_conflict_detector.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_policy_conflict_detector.py:5: in <module>
+    from src.live_update.engine import LiveUpdateEngine
+E   ModuleNotFoundError: No module named 'src.live_update'
+___ ERROR collecting actionable_logic/tests/test_template_extensibility.py ____
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_template_extensibility.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_template_extensibility.py:3: in <module>
+    from src.live_update.engine import LiveUpdateEngine
+E   ModuleNotFoundError: No module named 'src.live_update'
+_________ ERROR collecting actionable_logic/tests/test_translation.py _________
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_translation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_translation.py:2: in <module>
+    from src.translator.core import PolicySchemaTranslator
+E   ModuleNotFoundError: No module named 'src.translator'
+___ ERROR collecting actionable_logic/tests/test_universal_policy_parser.py ___
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_universal_policy_parser.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_universal_policy_parser.py:1: in <module>
+    from src.universal_policy_parser import UniversalPolicyParser
+E   ModuleNotFoundError: No module named 'src.universal_policy_parser'
+_______ ERROR collecting actionable_logic/tests/test_version_control.py _______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\actionable_logic\tests\test_version_control.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actionable_logic\tests\test_version_control.py:2: in <module>
+    from src.version_control.engine import VersionControlEngine
+E   ModuleNotFoundError: No module named 'src.version_control'
+__ ERROR collecting simulation_layer/tests/test_causal_impact_propagation.py __
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_causal_impact_propagation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_causal_impact_propagation.py:3: in <module>
+    from src.causal_impact_propagation import CausalImpactPropagationEngine, SynergyShiftAnalyzer
+simulation_layer\src\causal_impact_propagation.py:9: in <module>
+    from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
+E   ModuleNotFoundError: No module named 'src.models.cooperative_state_snapshot'
+__ ERROR collecting simulation_layer/tests/test_counterfactual_comparator.py __
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_counterfactual_comparator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_counterfactual_comparator.py:2: in <module>
+    from src.models.policy import PolicySchema, TransformationOperator
+E   ModuleNotFoundError: No module named 'src.models.policy'
+_____ ERROR collecting simulation_layer/tests/test_entropy_stress_test.py _____
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_entropy_stress_test.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_entropy_stress_test.py:1: in <module>
+    from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
+E   ModuleNotFoundError: No module named 'src.models.cooperative_state_snapshot'
+_____ ERROR collecting simulation_layer/tests/test_horizon_sensitivity.py _____
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_horizon_sensitivity.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_horizon_sensitivity.py:2: in <module>
+    from src.simulation.horizon_sensitivity_engine import HorizonSensitivityEngine, HorizonType
+simulation_layer\src\simulation\horizon_sensitivity_engine.py:6: in <module>
+    from src.models.policy import PolicySchema
+E   ModuleNotFoundError: No module named 'src.models.policy'
+_ ERROR collecting simulation_layer/tests/test_intelligence_evolution_model.py _
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_intelligence_evolution_model.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_intelligence_evolution_model.py:2: in <module>
+    from src.models.policy import PolicySchema, TransformationOperator
+E   ModuleNotFoundError: No module named 'src.models.policy'
+_ ERROR collecting simulation_layer/tests/test_negotiation_dynamics_simulator.py _
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_negotiation_dynamics_simulator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_negotiation_dynamics_simulator.py:1: in <module>
+    from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
+E   ModuleNotFoundError: No module named 'src.models.cooperative_state_snapshot'
+______ ERROR collecting simulation_layer/tests/test_policy_optimizer.py _______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_policy_optimizer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_policy_optimizer.py:3: in <module>
+    from src.models.policy import PolicySchema, TransformationOperator
+E   ModuleNotFoundError: No module named 'src.models.policy'
+________ ERROR collecting simulation_layer/tests/test_policy_schema.py ________
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_policy_schema.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_policy_schema.py:2: in <module>
+    from src.models.policy import PolicySchema, TransformationOperator
+E   ModuleNotFoundError: No module named 'src.models.policy'
+____ ERROR collecting simulation_layer/tests/test_policy_simulation_api.py ____
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_policy_simulation_api.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_policy_simulation_api.py:1: in <module>
+    from src.api.policy_simulation_api import PolicySimulationAPI
+simulation_layer\src\api\policy_simulation_api.py:8: in <module>
+    from src.causal_impact_propagation import (
+simulation_layer\src\causal_impact_propagation.py:9: in <module>
+    from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
+E   ModuleNotFoundError: No module named 'src.models.cooperative_state_snapshot'
+______ ERROR collecting simulation_layer/tests/test_policy_simulator.py _______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\simulation_layer\tests\test_policy_simulator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+simulation_layer\tests\test_policy_simulator.py:2: in <module>
+    from src.models.policy import PolicySchema, TransformationOperator
+E   ModuleNotFoundError: No module named 'src.models.policy'
+_______ ERROR collecting task_formation/test_adaptive_formation_api.py ________
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\test_adaptive_formation_api.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\test_adaptive_formation_api.py:1: in <module>
+    from adaptive_formation_api import AdaptiveFormationAPI
+E   ModuleNotFoundError: No module named 'adaptive_formation_api'
+______ ERROR collecting task_formation/test_complementarity_analyzer.py _______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\test_complementarity_analyzer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\test_complementarity_analyzer.py:2: in <module>
+    from cooperative_intelligence import CooperativeIntelligenceVector
+E   ModuleNotFoundError: No module named 'cooperative_intelligence'
+______ ERROR collecting task_formation/test_cooperative_context_model.py ______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\test_cooperative_context_model.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\test_cooperative_context_model.py:2: in <module>
+    from cooperative_context_model import CooperativeContextModel, DomainImpactType, CooperativeContextTensor
+E   ModuleNotFoundError: No module named 'cooperative_context_model'
+______ ERROR collecting task_formation/test_counterfactual_evaluator.py _______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\test_counterfactual_evaluator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\test_counterfactual_evaluator.py:2: in <module>
+    from synergy_forecast_simulator import SynergyForecastSimulator, HistoricalCoalitionRecord
+E   ModuleNotFoundError: No module named 'synergy_forecast_simulator'
+______ ERROR collecting task_formation/test_entropy_constraint_module.py ______
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\test_entropy_constraint_module.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\test_entropy_constraint_module.py:3: in <module>
+    from entropy_constraint_module import EntropyConstraintModule, TeamCandidate
+E   ModuleNotFoundError: No module named 'entropy_constraint_module'
+___________ ERROR collecting task_formation/test_matching_engine.py ___________
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\test_matching_engine.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\test_matching_engine.py:2: in <module>
+    from cooperative_context_model import CooperativeContextModel, DomainImpactType
+E   ModuleNotFoundError: No module named 'cooperative_context_model'
+_______________ ERROR collecting task_formation/test_output.txt _______________
+C:\Python314\Lib\pathlib\__init__.py:793: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:325: in decode
+    ???
+E   UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+______________ ERROR collecting task_formation/test_results.txt _______________
+C:\Python314\Lib\pathlib\__init__.py:793: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:325: in decode
+    ???
+E   UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+___________ ERROR collecting task_formation/test_team_optimizer.py ____________
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\test_team_optimizer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\test_team_optimizer.py:2: in <module>
+    from cooperative_intelligence import CooperativeIntelligenceVector, TemporalImpactMemory
+E   ModuleNotFoundError: No module named 'cooperative_intelligence'
+__ ERROR collecting task_formation/tests/test_synergy_forecast_simulator.py ___
+ImportError while importing test module 'C:\Users\galan\agent-infra-monorepo\task_formation\tests\test_synergy_forecast_simulator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+task_formation\tests\test_synergy_forecast_simulator.py:3: in <module>
+    from synergy_forecast_simulator import (
+E   ModuleNotFoundError: No module named 'synergy_forecast_simulator'
+=========================== short test summary info ===========================
+ERROR tests/test_system_integrity.py
+ERROR actionable_logic/tests/test_adaptive_guardrails.py
+ERROR actionable_logic/tests/test_cross_domain_mapper.py
+ERROR actionable_logic/tests/test_feedback_connector.py
+ERROR actionable_logic/tests/test_live_update_engine.py
+ERROR actionable_logic/tests/test_policy_api.py
+ERROR actionable_logic/tests/test_policy_conflict_detector.py
+ERROR actionable_logic/tests/test_template_extensibility.py
+ERROR actionable_logic/tests/test_translation.py
+ERROR actionable_logic/tests/test_universal_policy_parser.py
+ERROR actionable_logic/tests/test_version_control.py
+ERROR simulation_layer/tests/test_causal_impact_propagation.py
+ERROR simulation_layer/tests/test_counterfactual_comparator.py
+ERROR simulation_layer/tests/test_entropy_stress_test.py
+ERROR simulation_layer/tests/test_horizon_sensitivity.py
+ERROR simulation_layer/tests/test_intelligence_evolution_model.py
+ERROR simulation_layer/tests/test_negotiation_dynamics_simulator.py
+ERROR simulation_layer/tests/test_policy_optimizer.py
+ERROR simulation_layer/tests/test_policy_schema.py
+ERROR simulation_layer/tests/test_policy_simulation_api.py
+ERROR simulation_layer/tests/test_policy_simulator.py
+ERROR task_formation/test_adaptive_formation_api.py
+ERROR task_formation/test_complementarity_analyzer.py
+ERROR task_formation/test_cooperative_context_model.py
+ERROR task_formation/test_counterfactual_evaluator.py
+ERROR task_formation/test_entropy_constraint_module.py
+ERROR task_formation/test_matching_engine.py
+ERROR task_formation/test_output.txt - UnicodeDecodeError: 'utf-8' codec can'...
+ERROR task_formation/test_results.txt - UnicodeDecodeError: 'utf-8' codec can...
+ERROR task_formation/test_team_optimizer.py
+ERROR task_formation/tests/test_synergy_forecast_simulator.py
+!!!!!!!!!!!!!!!!!! Interrupted: 31 errors during collection !!!!!!!!!!!!!!!!!!!
+============================= 31 errors in 3.74s ==============================

@@ -1,6 +1,5 @@
 from sqlalchemy import Column, String, DateTime, Boolean, JSON, create_engine, Index, Enum as SQLEnum
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from datetime import datetime
 from typing import List, Optional, Union
 import uuid
