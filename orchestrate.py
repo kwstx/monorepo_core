@@ -10,9 +10,11 @@ def start_python_service(path, port):
     """Starts a FastAPI service using uvicorn."""
     logger.info(f"Starting Python service at {path} on port {port}...")
     log_file = open(f"{path}.log", "w")
+    cmd = f"{sys.executable} -m uvicorn src.api.main:app --port {port} --host 127.0.0.1"
     return subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "src.api.main:app", "--port", str(port), "--host", "127.0.0.1"],
+        cmd,
         cwd=os.path.abspath(path),
+        shell=True,
         stdout=log_file,
         stderr=subprocess.STDOUT,
         text=True
@@ -26,8 +28,13 @@ def start_ts_service(path, command, port=None):
     
     logger.info(f"Starting TypeScript service at {path} with command '{command}' on port {port}...")
     log_file = open(f"{path}.log", "w")
+    
+    # On Linux, shell=True with a list doesn't work as expected.
+    # We use a string for the command when shell=True is used for cross-platform compatibility.
+    cmd = f"npm run {command}"
+    
     return subprocess.Popen(
-        ["npm", "run", command],
+        cmd,
         cwd=os.path.abspath(path),
         shell=True,
         stdout=log_file,
