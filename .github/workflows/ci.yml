@@ -22,15 +22,17 @@ jobs:
     - name: Run Python Module Tests
       run: |
         export REPO_ROOT=$(pwd)
+        export PKG_PATHS=$(ls -d $REPO_ROOT/packages/*/ | tr '\n' ':' | sed 's/:$//')
+        export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$PKG_PATHS
         
         echo "Running Actionable Logic tests..."
-        (cd $REPO_ROOT/packages/actionable_logic && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/packages:$REPO_ROOT/packages/actionable_logic:$REPO_ROOT/packages/actionable_logic/src && pytest tests)
+        (cd $REPO_ROOT/packages/actionable_logic && pytest tests)
         
         echo "Running Simulation Layer tests..."
-        (cd $REPO_ROOT/packages/simulation_layer && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/packages:$REPO_ROOT/packages/simulation_layer:$REPO_ROOT/packages/simulation_layer/src && pytest tests)
+        (cd $REPO_ROOT/packages/simulation_layer && pytest tests)
         
         echo "Running Task Formation tests..."
-        (cd $REPO_ROOT/packages/task_formation && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/packages:$REPO_ROOT/packages/task_formation && pytest .)
+        (cd $REPO_ROOT/packages/task_formation && pytest .)
 
   test-typescript:
     runs-on: ubuntu-latest
@@ -66,5 +68,7 @@ jobs:
         pip install -r requirements.txt requests
     - name: Run Full-Stack Health Test
       run: |
-        export PYTHONPATH=$PYTHONPATH:$(pwd):$(pwd)/packages
+        export REPO_ROOT=$(pwd)
+        export PKG_PATHS=$(ls -d $REPO_ROOT/packages/*/ | tr '\n' ':' | sed 's/:$//')
+        export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$PKG_PATHS
         python tests/test_system_health.py
