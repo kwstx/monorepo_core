@@ -3,6 +3,7 @@ name = "autonomy_server"
 version = "0.1.0"
 description = "Autonomy Server"
 dependencies = [
+    "autonomy_core",
     "autonomy_sdk",
     "fastapi",
     "uvicorn"
