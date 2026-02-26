@@ -1,17 +1,49 @@
 import urllib.request
+import urllib.error
 import json
+import asyncio
+from typing import Optional, Dict, Any
+
 from autonomy_core import AutonomyConfig, AutonomyContainer, AutonomyCore
 from autonomy_core.schemas.models import (
     AgentRegistrationRequest, ActionAuthorizationRequest, GovernanceProposalRequest
 )
-from typing import Optional, Dict, Any
+from autonomy_core.exceptions import AutonomyException
+
+from .exceptions import (
+    AutonomySDKError,
+    AgentRegistrationError,
+    ActionAuthorizationError,
+    ClientConnectionError,
+    ProposalError
+)
 
 class AutonomyClient:
     """
     The main entry point for external developers to interact with the Autonomy System.
-    Wraps AutonomyCore to hide internal complexity and expose high-level orchestration.
+    Wraps AutonomyCore to hide internal complexity and expose high-level orchestration,
+    using native Python types rather than internal Pydantic models.
     """
     def __init__(self, config: Optional[Dict[str, Any]] = None, api_version: str = "v1", server_url: Optional[str] = None):
+        """
+        Initialize the AutonomyClient.
+        
+        Args:
+            config: Optional dict of configuration parameters for the core system.
+            api_version: The API version to specify in requests.
+            server_url: The URL of a remote autonomy server. If not provided, an in-memory AutonomyCore is used.
+            
+        Example:
+            ```python
+            from autonomy_sdk import AutonomyClient
+            
+            # Using an in-memory local core processing engine
+            client = AutonomyClient()
+            
+            # Alternatively, connecting to a remote autonomy cluster
+            remote_client = AutonomyClient(server_url="http://node.autonomy.local")
+            ```
+        """
         self.config = config or {}
         self.api_version = api_version
         self.server_url = server_url
@@ -21,20 +53,65 @@ class AutonomyClient:
         
         # Only initialize local core if no server URL is provided
         if not self.server_url:
-            container = AutonomyContainer(_to_autonomy_config(self.config))
-            self._core: Optional[AutonomyCore] = container.build_core()
+            try:
+                container = AutonomyContainer(_to_autonomy_config(self.config))
+                self._core: Optional[AutonomyCore] = container.build_core()
+            except Exception as e:
+                raise AutonomySDKError(f"Failed to initialize local AutonomyCore: {e}") from e
         else:
             self._core: Optional[AutonomyCore] = None
 
-    async def authorize(self, request: ActionAuthorizationRequest) -> bool:
+    async def authorize(
+        self,
+        agent_id: str,
+        action_id: str,
+        action_type: str,
+        payload: Optional[Dict[str, Any]] = None
+    ) -> bool:
         """
         Check if an agent is authorized to perform a specific action.
         This triggers a full orchestration of identity, enforcement, economics, scoring, and simulation.
+        
+        Args:
+            agent_id: The ID of the agent attempting the action.
+            action_id: A unique identifier for the action.
+            action_type: The type or category of the action.
+            payload: Optional dictionary containing the action details.
+
+        Returns:
+            True if the action is authorized, False otherwise.
+            
+        Raises:
+            ActionAuthorizationError: If an error occurs during the authorization process.
+            ClientConnectionError: If the remote server cannot be reached.
+            
+        Example:
+            ```python
+            is_authorized = await client.authorize(
+                agent_id="AgentZero",
+                action_id="tx_10294",
+                action_type="transfer_funds",
+                payload={"amount": 500, "currency": "USD"}
+            )
+            if is_authorized:
+                print("Proceeding with the action...")
+            else:
+                print("Agent unauthorized for this action")
+            ```
         """
+        payload = payload or {}
+        req_obj = ActionAuthorizationRequest(
+            agent_id=agent_id,
+            action_id=action_id,
+            action_type=action_type,
+            payload=payload
+        )
+        body_bytes = req_obj.model_dump_json().encode('utf-8')
+
         if self.server_url:
             req = urllib.request.Request(
                 f"{self.server_url}/authorize",
-                data=request.model_dump_json().encode('utf-8'),
+                data=body_bytes,
                 headers=self._request_headers,
                 method="POST"
             )
@@ -42,29 +119,80 @@ class AutonomyClient:
                 with urllib.request.urlopen(req) as response:
                     data = json.loads(response.read().decode('utf-8'))
                     return data.get("authorized", False)
+            except urllib.error.URLError as e:
+                raise ClientConnectionError(f"Error calling remote server: {e}") from e
             except Exception as e:
-                print(f"Error calling remote server: {e}")
-                return False
+                raise ActionAuthorizationError(f"Unexpected error calling authorization server: {e}") from e
         else:
             if not self._core:
-                raise ValueError("Core Engine is not initialized locally")
-            response = await self._core.authorize_action(request)
-            return response.is_authorized
+                raise AutonomySDKError("Core Engine is not initialized locally.")
+            try:
+                response = await self._core.authorize_action(req_obj)
+                return response.is_authorized
+            except AutonomyException as e:
+                raise ActionAuthorizationError(f"Authorization denied or failed internally: {str(e)}") from e
+            except Exception as e:
+                raise ActionAuthorizationError(f"Unexpected internal authorization error: {str(e)}") from e
 
-    def authorize_sync(self, request: ActionAuthorizationRequest) -> bool:
-        """Synchronous wrapper for authorize."""
-        import asyncio
-        return asyncio.run(self.authorize(request))
+    def authorize_sync(
+        self,
+        agent_id: str,
+        action_id: str,
+        action_type: str,
+        payload: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Synchronous wrapper for authorize.
+        
+        Example:
+            ```python
+            client.authorize_sync("Agent_A", "action_1", "read_file", {"path": "/data.txt"})
+            ```
+        """
+        return asyncio.run(self.authorize(agent_id, action_id, action_type, payload))
 
-    async def register_agent(self, request: AgentRegistrationRequest) -> str:
+    async def register_agent(
+        self,
+        agent_id: str,
+        name: Optional[str] = None,
+        attributes: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Register a new agent in the system.
-        Returns the unique agent ID.
+        
+        Args:
+            agent_id: The unique ID for the agent.
+            name: Optional human-readable name for the agent.
+            attributes: Optional dictionary of attributes describing the agent.
+            
+        Returns:
+            The unique agent ID if successful.
+        
+        Raises:
+            AgentRegistrationError: If agent registration fails.
+            ClientConnectionError: If the remote server cannot be reached.
+            
+        Example:
+            ```python
+            new_id = await client.register_agent(
+                agent_id="AgentZero",
+                name="System Administrator Bot",
+                attributes={"clearance": "level_5"}
+            )
+            ```
         """
+        attributes = attributes or {}
+        req_obj = AgentRegistrationRequest(
+            agent_id=agent_id,
+            name=name,
+            attributes=attributes
+        )
+        body_bytes = req_obj.model_dump_json().encode('utf-8')
+
         if self.server_url:
             req = urllib.request.Request(
                 f"{self.server_url}/register_agent",
-                data=request.model_dump_json().encode('utf-8'),
+                data=body_bytes,
                 headers=self._request_headers,
                 method="POST"
             )
@@ -72,33 +200,109 @@ class AutonomyClient:
                 with urllib.request.urlopen(req) as response:
                     data = json.loads(response.read().decode('utf-8'))
                     return data.get("agent_id", "")
+            except urllib.error.URLError as e:
+                raise ClientConnectionError(f"Error calling remote server: {e}") from e
             except Exception as e:
-                print(f"Error calling remote server: {e}")
-                return ""
+                raise AgentRegistrationError(f"Unexpected error calling registration server: {e}") from e
         else:
             if not self._core:
-                raise ValueError("Core Engine is not initialized locally")
-            return await self._core.register_agent(request)
+                raise AutonomySDKError("Core Engine is not initialized locally.")
+            try:
+                return await self._core.register_agent(req_obj)
+            except AutonomyException as e:
+                raise AgentRegistrationError(f"Registration failed internally: {str(e)}") from e
+            except Exception as e:
+                raise AgentRegistrationError(f"Unexpected internal registration error: {str(e)}") from e
 
-    def register_agent_sync(self, request: AgentRegistrationRequest) -> str:
-        """Synchronous wrapper for register_agent."""
-        import asyncio
-        return asyncio.run(self.register_agent(request))
+    def register_agent_sync(
+        self,
+        agent_id: str,
+        name: Optional[str] = None,
+        attributes: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        Synchronous wrapper for register_agent.
+        
+        Example:
+            ```python
+            client.register_agent_sync("AgentZero", name="System Admin")
+            ```
+        """
+        return asyncio.run(self.register_agent(agent_id, name, attributes))
 
-    async def propose_change(self, request: GovernanceProposalRequest) -> bool:
+    async def propose_change(self, proposer_id: str, changes: Dict[str, Any]) -> bool:
         """
         Propose a change to the system governance or configuration.
+        
+        Args:
+            proposer_id: The ID of the agent proposing the change.
+            changes: A dictionary detailing the proposed changes.
+            
+        Returns:
+            True if the proposal is successfully submitted, False otherwise.
+            
+        Raises:
+            ProposalError: If the proposal cannot be processed by the core.
+            
+        Example:
+            ```python
+            success = await client.propose_change(
+                proposer_id="AgentZero",
+                changes={"max_budget": 5000}
+            )
+            if success:
+                print("Governance change successfully submitted for vote!")
+            ```
         """
-        return await self._core.propose_change(request)
+        req_obj = GovernanceProposalRequest(proposer_id=proposer_id, changes=changes)
+        
+        if self.server_url:
+            req = urllib.request.Request(
+                f"{self.server_url}/propose_change",
+                data=req_obj.model_dump_json().encode('utf-8'),
+                headers=self._request_headers,
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req) as response:
+                    data = json.loads(response.read().decode('utf-8'))
+                    return data.get("success", False)
+            except urllib.error.URLError as e:
+                raise ClientConnectionError(f"Error calling remote server: {e}") from e
+            except urllib.error.HTTPError as e:
+                raise ProposalError(f"HTTP Error calling proposal server: {e.code} - {e.reason}") from e
+            except Exception as e:
+                raise ProposalError(f"Unexpected error calling proposal server: {e}") from e
+        else:
+            if not self._core:
+                raise AutonomySDKError("Core Engine is not initialized locally.")
+            try:
+                return await self._core.propose_change(req_obj)
+            except AutonomyException as e:
+                raise ProposalError(f"Proposal failed internally: {str(e)}") from e
+            except Exception as e:
+                raise ProposalError(f"Unexpected internal proposal error: {str(e)}") from e
 
-    def propose_change_sync(self, request: GovernanceProposalRequest) -> bool:
-        """Synchronous wrapper for propose_change."""
-        import asyncio
-        return asyncio.run(self.propose_change(request))
+    def propose_change_sync(self, proposer_id: str, changes: Dict[str, Any]) -> bool:
+        """
+        Synchronous wrapper for propose_change.
+        
+        Example:
+            ```python
+            client.propose_change_sync("Agent_X", {"settings.debug": True})
+            ```
+        """
+        return asyncio.run(self.propose_change(proposer_id, changes))
 
     def get_system_status(self) -> Dict[str, Any]:
         """
         Returns a high-level status of the autonomy system.
+        
+        Example:
+            ```python
+            print(client.get_system_status())
+            # {'status': 'active', 'version': '1.0.0', 'connected': True}
+            ```
         """
         return {
             "status": "active",
@@ -108,6 +312,7 @@ class AutonomyClient:
 
 
 def _to_autonomy_config(config: Dict[str, Any]) -> AutonomyConfig:
+    """Helper to convert a dictionary to an AutonomyConfig securely."""
     if not config:
         return AutonomyConfig()
     defaults = AutonomyConfig()
