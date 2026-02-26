@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"No tests specified for economic_autonomy\" && exit 0",
+    "test": "node --test",
     "start:api": "node --loader ts-node/esm src/platform/api/server.ts"
   },
   "keywords": [],

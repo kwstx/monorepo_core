@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"No tests specified for identity_system\" && exit 0"
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
