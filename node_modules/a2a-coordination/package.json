@@ -4,7 +4,7 @@
     "description": "Agent-to-Agent Coordination Layer",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"No tests specified for a2a_coordination\" && exit 0",
+        "test": "node --test",
         "demo": "ts-node src/examples/reputation_demo.ts",
         "demo:recommendations": "ts-node src/examples/demo_recommendations.ts",
         "start": "ts-node src/api/app.ts"

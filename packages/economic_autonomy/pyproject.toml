@@ -1,0 +1,5 @@
+﻿[project]
+name = "economic_autonomy"
+version = "0.1.0"
+description = "economic_autonomy package"
+dependencies = []
