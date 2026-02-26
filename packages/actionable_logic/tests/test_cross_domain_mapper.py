@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from src.models.policy_schema import PolicyDomain, PolicyScope, StructuredPolicy
-from src.translator.cross_domain_mapper import ComplianceAction, CrossDomainMapper, OperationalContext
+from actionable_logic.models.policy_schema import PolicyDomain, PolicyScope, StructuredPolicy
+from actionable_logic.translator.cross_domain_mapper import ComplianceAction, CrossDomainMapper, OperationalContext
 
 
 def _privacy_policy() -> StructuredPolicy:

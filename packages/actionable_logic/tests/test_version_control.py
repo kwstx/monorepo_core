@@ -1,8 +1,8 @@
 import pytest
-from src.version_control.engine import VersionControlEngine
-from src.repository.policy_repository import PolicyRepository
-from src.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope, LogicalCondition, ConditionOperator
-from src.repository.models import DeploymentStatus, AdoptionStatus
+from actionable_logic.version_control.engine import VersionControlEngine
+from actionable_logic.repository.policy_repository import PolicyRepository
+from actionable_logic.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope, LogicalCondition, ConditionOperator
+from actionable_logic.repository.models import DeploymentStatus, AdoptionStatus
 
 @pytest.fixture
 def vc_engine():

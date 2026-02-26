@@ -2,8 +2,8 @@ import uuid
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import and_, or_
-from src.repository.models import PolicyRecord, get_engine, init_db
-from src.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
+from .models import PolicyRecord, get_engine, init_db
+from ..models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
 
 class PolicyRepository:
     def __init__(self, db_url="sqlite:///policy_repository.db"):

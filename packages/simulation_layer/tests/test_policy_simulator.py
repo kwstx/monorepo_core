@@ -1,7 +1,7 @@
 import pytest
-from src.models.policy import PolicySchema, TransformationOperator
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.simulation.policy_simulator import PolicyInjectionSimulator
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.simulation.policy_simulator import PolicyInjectionSimulator
 
 def test_simulator_injection_propagation():
     # 1. Setup a mock snapshot

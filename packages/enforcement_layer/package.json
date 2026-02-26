@@ -1,18 +1,17 @@
 {
-  "name": "enforcement_layers",
+  "name": "enforcement-layers",
   "version": "1.0.0",
-  "description": "Pre-execution action firewall for agent systems",
-  "main": "src/index.js",
+  "description": "Pre-execution action firewall for agent systems - Domain Logic",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
+  "devDependencies": {
     "@types/node": "^25.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
-  }
+  },
+  "dependencies": {}
 }

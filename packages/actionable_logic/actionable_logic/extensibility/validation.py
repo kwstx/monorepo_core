@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
-from src.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
+from actionable_logic.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
 
 @dataclass
 class ValidationResult:

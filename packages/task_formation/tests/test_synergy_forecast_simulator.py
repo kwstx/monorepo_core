@@ -1,6 +1,6 @@
 from math import log
 
-from synergy_forecast_simulator import (
+from task_formation.synergy_forecast_simulator import (
     AgentCounterfactualProfile,
     HistoricalCoalitionRecord,
     StabilityOptimizationLayer,

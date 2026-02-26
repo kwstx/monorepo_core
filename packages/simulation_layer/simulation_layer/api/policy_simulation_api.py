@@ -5,16 +5,16 @@ from typing import Sequence
 
 from pydantic import BaseModel, Field
 
-from src.causal_impact_propagation import (
+from simulation_layer.causal_impact_propagation import (
     CausalImpactPropagationEngine,
     SynergyShiftAnalyzer,
     SynergyShiftHorizonProjection,
 )
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.models.intelligence_evolution_model import EvolutionMetrics, IntelligenceEvolutionModel
-from src.models.policy import PolicySchema, TransformationOperator
-from src.simulation.entropy_stress_test import EntropyCycleMetrics, EntropyStressTest
-from src.simulation.negotiation_dynamics_simulator import GovernanceRuleRisk, NegotiationDynamicsSimulator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.intelligence_evolution_model import EvolutionMetrics, IntelligenceEvolutionModel
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.simulation.entropy_stress_test import EntropyCycleMetrics, EntropyStressTest
+from simulation_layer.simulation.negotiation_dynamics_simulator import GovernanceRuleRisk, NegotiationDynamicsSimulator
 
 
 class DownstreamImpactDelta(BaseModel):

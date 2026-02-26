@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.models.policy_schema import StructuredPolicy
+from actionable_logic.models.policy_schema import StructuredPolicy
 
 
 class OperationalContext(BaseModel):

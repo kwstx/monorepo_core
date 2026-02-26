@@ -1,6 +1,6 @@
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.models.policy import PolicySchema
-from src.simulation.negotiation_dynamics_simulator import NegotiationDynamicsSimulator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.policy import PolicySchema
+from simulation_layer.simulation.negotiation_dynamics_simulator import NegotiationDynamicsSimulator
 
 
 def _snapshot() -> CooperativeStateSnapshot:

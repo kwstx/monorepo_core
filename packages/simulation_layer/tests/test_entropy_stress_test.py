@@ -1,6 +1,6 @@
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.models.policy import PolicySchema
-from src.simulation.entropy_stress_test import EntropyStressTest
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.policy import PolicySchema
+from simulation_layer.simulation.entropy_stress_test import EntropyStressTest
 
 
 def _baseline_snapshot() -> CooperativeStateSnapshot:

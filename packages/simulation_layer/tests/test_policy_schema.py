@@ -1,5 +1,5 @@
 import json
-from src.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
 
 def test_policy_instantiation():
     policy_data = {

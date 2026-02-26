@@ -7,8 +7,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Callable, Protocol
 
-from src.models.policy_schema import StructuredPolicy
-from src.translator.core import PolicySchemaTranslator
+from actionable_logic.models.policy_schema import StructuredPolicy
+from actionable_logic.translator.core import PolicySchemaTranslator
 
 
 @dataclass(frozen=True)

@@ -1,8 +1,8 @@
 from typing import List, Optional, Dict, Any
 import logging
-from src.models.policy_schema import StructuredPolicy
-from src.repository.policy_repository import PolicyRepository
-from src.live_update.engine import LiveUpdateEngine, PolicyChange
+from actionable_logic.models.policy_schema import StructuredPolicy
+from actionable_logic.repository.policy_repository import PolicyRepository
+from actionable_logic.live_update.engine import LiveUpdateEngine, PolicyChange
 from .validation import TemplateValidator, ValidationResult
 
 logger = logging.getLogger(__name__)

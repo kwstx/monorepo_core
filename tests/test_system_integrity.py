@@ -19,7 +19,7 @@ def import_module_component(module_name, import_path, class_name):
 
 # Load cross-module components
 sys.path.append(monorepo_root)
-from shared_utils.python.logger import get_logger
+from shared_utils.logger import get_logger
 
 PolicyEnforcer = import_module_component("actionable_logic", "src.enforcement.engine", "PolicyEnforcer")
 PolicyInjectionSimulator = import_module_component("simulation_layer", "src.simulation.policy_simulator", "PolicyInjectionSimulator")

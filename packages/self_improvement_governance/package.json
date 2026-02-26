@@ -1,18 +1,17 @@
 {
-  "name": "self_improvement_governance",
+  "name": "self-improvement-governance",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Autonomous Governance and Self-Improvement Domain Logic",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
-    "@types/node": "^25.3.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
-  }
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {}
 }

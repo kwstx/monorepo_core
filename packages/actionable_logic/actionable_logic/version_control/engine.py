@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Tuple
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
-from src.repository.models import (
+from actionable_logic.repository.models import (
     DeploymentRecord, 
     AdoptionRecord, 
     DeploymentStatus, 
@@ -11,8 +11,8 @@ from src.repository.models import (
     get_engine, 
     init_db
 )
-from src.repository.policy_repository import PolicyRepository
-from src.models.policy_schema import StructuredPolicy
+from actionable_logic.repository.policy_repository import PolicyRepository
+from actionable_logic.models.policy_schema import StructuredPolicy
 
 class VersionControlEngine:
     """

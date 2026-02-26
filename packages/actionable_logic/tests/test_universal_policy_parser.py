@@ -1,4 +1,4 @@
-from src.universal_policy_parser import UniversalPolicyParser
+from actionable_logic.universal_policy_parser import UniversalPolicyParser
 
 
 def _contains_relation(rule, relation):

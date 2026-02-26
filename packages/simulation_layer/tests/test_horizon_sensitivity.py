@@ -1,7 +1,7 @@
 import pytest
-from src.simulation.horizon_sensitivity_engine import HorizonSensitivityEngine, HorizonType
-from src.models.policy import PolicySchema
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot, TrustVector
+from simulation_layer.simulation.horizon_sensitivity_engine import HorizonSensitivityEngine, HorizonType
+from simulation_layer.models.policy import PolicySchema
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot, TrustVector
 
 def test_horizon_sensitivity_engine_evaluation():
     """

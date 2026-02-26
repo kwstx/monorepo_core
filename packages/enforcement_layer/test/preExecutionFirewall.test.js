@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { PreExecutionFirewall, ActionExecutor } = require("../src");
+const { PreExecutionFirewall, ActionExecutor } = require("../enforcement_layer");
 
 function buildFirewall() {
   return new PreExecutionFirewall({

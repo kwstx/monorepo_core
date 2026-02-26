@@ -10,8 +10,8 @@ from itertools import combinations
 from pathlib import Path
 from typing import Iterable
 
-from src.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, StructuredPolicy
-from src.repository.policy_repository import PolicyRepository
+from actionable_logic.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, StructuredPolicy
+from actionable_logic.repository.policy_repository import PolicyRepository
 
 logger = logging.getLogger(__name__)
 

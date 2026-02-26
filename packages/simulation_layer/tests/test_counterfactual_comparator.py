@@ -1,7 +1,7 @@
 import pytest
-from src.models.policy import PolicySchema, TransformationOperator
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.simulation.counterfactual_policy_comparator import CounterfactualPolicyComparator
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.simulation.counterfactual_policy_comparator import CounterfactualPolicyComparator
 
 def test_counterfactual_policy_comparison():
     # 1. Setup Initial State Snapshot

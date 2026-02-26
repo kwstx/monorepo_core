@@ -1,7 +1,7 @@
 import threading
 import time
 
-from src.live_update.engine import (
+from actionable_logic.live_update.engine import (
     AtomicWorkflowStore,
     InMemoryPolicyChangeSource,
     LiveUpdateEngine,

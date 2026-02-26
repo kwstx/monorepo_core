@@ -1,0 +1,23 @@
+{
+    "name": "economic-autonomy-service",
+    "version": "1.0.0",
+    "description": "HTTP Service for Economic Autonomy",
+    "main": "src/platform/api/server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node --loader ts-node/esm src/platform/api/server.ts",
+        "dev": "nodemon --loader ts-node/esm src/platform/api/server.ts"
+    },
+    "dependencies": {
+        "economic_autonomy": "*",
+        "express": "^5.2.1",
+        "@shared/logger": "file:../../shared_utils/typescript"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.6",
+        "@types/node": "^25.3.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.9.3",
+        "nodemon": "^3.1.0"
+    }
+}

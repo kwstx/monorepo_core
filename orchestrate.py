@@ -2,7 +2,7 @@ import sys
 import subprocess
 import time
 import os
-from shared_utils.python.logger import get_logger
+from shared_utils.logger import get_logger
 
 logger = get_logger("MonorepoOrchestrator")
 
@@ -50,7 +50,7 @@ def main():
     log_files = []
     try:
         # Python Services (FastAPI)
-        p1, f1 = start_python_service("actionable_logic", 8000)
+        p1, f1 = start_python_service("apps/actionable_logic_service", 8000)
         services.append(p1)
         log_files.append(f1)
         
@@ -58,11 +58,11 @@ def main():
         # Port assignments to avoid conflicts:
         # 3000: Economic Autonomy (Expected by health test)
         # 3001: A2A Coordination
-        p2, f2 = start_ts_service("a2a_coordination", "start", port=3001)
+        p2, f2 = start_ts_service("apps/a2a_coordination_service", "start", port=3001)
         services.append(p2)
         log_files.append(f2)
         
-        p3, f3 = start_ts_service("economic_autonomy", "start:api", port=3000)
+        p3, f3 = start_ts_service("apps/economic_autonomy_service", "start", port=3000)
         services.append(p3)
         log_files.append(f3)
         

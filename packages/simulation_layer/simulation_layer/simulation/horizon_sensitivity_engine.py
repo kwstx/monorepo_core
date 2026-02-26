@@ -3,10 +3,10 @@ from enum import Enum
 from pydantic import BaseModel, Field
 import numpy as np
 
-from src.models.policy import PolicySchema
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.models.intelligence_evolution_model import IntelligenceEvolutionModel, EvolutionMetrics
-from src.simulation.entropy_stress_test import EntropyStressTest, EntropyStressReport
+from simulation_layer.models.policy import PolicySchema
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.intelligence_evolution_model import IntelligenceEvolutionModel, EvolutionMetrics
+from simulation_layer.simulation.entropy_stress_test import EntropyStressTest, EntropyStressReport
 
 class HorizonType(str, Enum):
     SHORT_TERM = "short_term"

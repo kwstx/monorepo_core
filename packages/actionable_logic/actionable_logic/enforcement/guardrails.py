@@ -12,9 +12,9 @@ monorepo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.
 if monorepo_root not in sys.path:
     sys.path.append(monorepo_root)
 
-from shared_utils.python.logger import get_logger
-from src.models.policy_schema import StructuredPolicy, LogicalCondition, ConditionOperator, PolicyDomain
-from src.enforcement.engine import PolicyEnforcer, EnforcementResult
+from shared_utils.logger import get_logger
+from actionable_logic.models.policy_schema import StructuredPolicy, LogicalCondition, ConditionOperator, PolicyDomain
+from actionable_logic.enforcement.engine import PolicyEnforcer, EnforcementResult
 
 logger = get_logger(__name__)
 

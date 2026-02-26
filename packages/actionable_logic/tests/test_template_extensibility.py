@@ -1,8 +1,8 @@
 import pytest
-from src.repository.policy_repository import PolicyRepository
-from src.live_update.engine import LiveUpdateEngine
-from src.extensibility.template_module import TemplateExtensibilityModule
-from src.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
+from actionable_logic.repository.policy_repository import PolicyRepository
+from actionable_logic.live_update.engine import LiveUpdateEngine
+from actionable_logic.extensibility.template_module import TemplateExtensibilityModule
+from actionable_logic.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
 
 @pytest.fixture
 def extensibility_module():

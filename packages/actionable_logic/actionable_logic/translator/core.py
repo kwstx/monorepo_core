@@ -2,7 +2,7 @@ import json
 import uuid
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-from src.models.policy_schema import (
+from actionable_logic.models.policy_schema import (
     StructuredPolicy, 
     PolicyDomain, 
     PolicyScope, 

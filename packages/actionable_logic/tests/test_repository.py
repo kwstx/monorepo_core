@@ -1,8 +1,8 @@
 import pytest
 import os
 from datetime import datetime
-from src.repository.policy_repository import PolicyRepository
-from src.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope, LogicalCondition, ConditionOperator
+from actionable_logic.repository.policy_repository import PolicyRepository
+from actionable_logic.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope, LogicalCondition, ConditionOperator
 
 @pytest.fixture
 def repo():

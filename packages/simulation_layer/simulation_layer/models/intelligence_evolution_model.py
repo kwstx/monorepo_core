@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
-from src.models.policy import PolicySchema, TransformationOperator
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
 
 class EvolutionMetrics(BaseModel):
     """Captures the state of intelligence evolution at a specific point in time."""

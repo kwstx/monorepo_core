@@ -1,5 +1,5 @@
-from src.api.policy_simulation_api import PolicySimulationAPI
-from src.models.cooperative_state_snapshot import (
+from simulation_layer.api.policy_simulation_api import PolicySimulationAPI
+from simulation_layer.models.cooperative_state_snapshot import (
     CooperativeIntelligenceDistribution,
     CooperativeStateSnapshot,
     PredictiveCalibrationCurve,
@@ -7,7 +7,7 @@ from src.models.cooperative_state_snapshot import (
     SynergyDensityMatrix,
     TrustVector,
 )
-from src.models.policy import PolicySchema
+from simulation_layer.models.policy import PolicySchema
 
 
 def _baseline_snapshot() -> CooperativeStateSnapshot:

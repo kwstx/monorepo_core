@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from src.enforcement.guardrails import AdaptiveGuardrailsEngine
-from src.feedback.connector import FeedbackConnector, FeedbackObservation
-from src.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, PolicyScope, StructuredPolicy
+from actionable_logic.enforcement.guardrails import AdaptiveGuardrailsEngine
+from actionable_logic.feedback.connector import FeedbackConnector, FeedbackObservation
+from actionable_logic.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, PolicyScope, StructuredPolicy
 
 
 def _policy(policy_id: str) -> StructuredPolicy:

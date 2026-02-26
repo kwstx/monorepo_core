@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "simulation_layer"
 version = "0.1.0"
 description = "simulation_layer package"

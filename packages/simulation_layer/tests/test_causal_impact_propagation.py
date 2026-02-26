@@ -1,7 +1,7 @@
 import math
 
-from src.causal_impact_propagation import CausalImpactPropagationEngine, SynergyShiftAnalyzer
-from src.models.cooperative_state_snapshot import (
+from simulation_layer.causal_impact_propagation import CausalImpactPropagationEngine, SynergyShiftAnalyzer
+from simulation_layer.models.cooperative_state_snapshot import (
     CooperativeIntelligenceDistribution,
     CooperativeStateSnapshot,
     PredictiveCalibrationCurve,
@@ -9,7 +9,7 @@ from src.models.cooperative_state_snapshot import (
     SynergyDensityMatrix,
     TrustVector,
 )
-from src.models.policy import PolicySchema
+from simulation_layer.models.policy import PolicySchema
 
 
 def _baseline_snapshot() -> CooperativeStateSnapshot:

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Callable, Optional
 import threading
-from src.models.policy_schema import StructuredPolicy
-from src.enforcement.engine import PolicyEnforcer, EnforcementResult
+from actionable_logic.models.policy_schema import StructuredPolicy
+from actionable_logic.enforcement.engine import PolicyEnforcer, EnforcementResult
 
 class PolicyInjectedWorkflow:
     """

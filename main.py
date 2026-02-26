@@ -9,7 +9,7 @@ This script supports:
 import os
 import sys
 import subprocess
-from shared_utils.python.logger import get_logger
+from shared_utils.logger import get_logger
 
 logger = get_logger("Orchestrator")
 

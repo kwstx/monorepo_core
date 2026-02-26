@@ -8,11 +8,11 @@ monorepo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.
 if monorepo_root not in sys.path:
     sys.path.append(monorepo_root)
 
-from shared_utils.python.logger import get_logger
+from shared_utils.logger import get_logger
 from typing import Any, Dict, List, Union, Optional
 from pydantic import BaseModel, Field
-from src.models.policy import PolicySchema, TransformationOperator, InfluenceTransformation, ExecutableConstraint
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.policy import PolicySchema, TransformationOperator, InfluenceTransformation, ExecutableConstraint
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
 
 class SimulationResult(BaseModel):
     """Encapsulates the outcome of a policy injection simulation."""

@@ -1,7 +1,7 @@
 import pytest
-from src.models.policy import PolicySchema, TransformationOperator
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.models.intelligence_evolution_model import IntelligenceEvolutionModel, EvolutionMetrics
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.intelligence_evolution_model import IntelligenceEvolutionModel, EvolutionMetrics
 
 def test_intelligence_evolution_feedback_loop():
     # 1. Setup initial state with baseline synergy and calibration

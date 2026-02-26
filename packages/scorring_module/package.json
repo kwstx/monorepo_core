@@ -1,15 +1,14 @@
 {
-  "name": "scorring_module",
+  "name": "scorring-module",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "node --test"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "Risk Scoring and Decision Evaluation Domain Logic",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build": "tsc"
+  },
   "dependencies": {
     "uuid": "^13.0.0"
   },

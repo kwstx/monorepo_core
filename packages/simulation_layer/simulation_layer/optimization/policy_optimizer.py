@@ -2,11 +2,11 @@ from typing import Any, Dict, List, Optional, Tuple, Set
 import numpy as np
 from pydantic import BaseModel, Field
 
-from src.models.policy import PolicySchema
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.models.intelligence_evolution_model import IntelligenceEvolutionModel, EvolutionMetrics
-from src.simulation.horizon_sensitivity_engine import HorizonSensitivityEngine, SensitivityAnalysis
-from src.simulation.entropy_stress_test import EntropyStressTest, EntropyStressReport
+from simulation_layer.models.policy import PolicySchema
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.intelligence_evolution_model import IntelligenceEvolutionModel, EvolutionMetrics
+from simulation_layer.simulation.horizon_sensitivity_engine import HorizonSensitivityEngine, SensitivityAnalysis
+from simulation_layer.simulation.entropy_stress_test import EntropyStressTest, EntropyStressReport
 
 class PolicyObjectiveScores(BaseModel):
     """Raw objective scores for a candidate policy."""

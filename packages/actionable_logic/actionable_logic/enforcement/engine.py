@@ -1,7 +1,7 @@
 import re
 from typing import Any, Dict, List, Optional, Set
 from pydantic import BaseModel, Field
-from src.models.policy_schema import (
+from actionable_logic.models.policy_schema import (
     StructuredPolicy, 
     LogicalCondition, 
     ConditionOperator, 

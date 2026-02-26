@@ -1,11 +1,11 @@
 import unittest
 from datetime import datetime
-from src.models.policy_schema import (
+from actionable_logic.models.policy_schema import (
     StructuredPolicy, PolicyDomain, PolicyScope, 
     LogicalCondition, ConditionOperator, ActionTrigger
 )
-from src.enforcement.guardrails import AdaptiveGuardrailsEngine, GuardrailAction
-from src.live_update.engine import LiveUpdateEngine, InMemoryPolicyChangeSource, PolicyChange
+from actionable_logic.enforcement.guardrails import AdaptiveGuardrailsEngine, GuardrailAction
+from actionable_logic.live_update.engine import LiveUpdateEngine, InMemoryPolicyChangeSource, PolicyChange
 
 class TestAdaptiveGuardrails(unittest.TestCase):
     def setUp(self):

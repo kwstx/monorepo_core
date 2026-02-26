@@ -1,23 +1,18 @@
 {
   "name": "economic_autonomy",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Economic Autonomy Domain Logic",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
   "scripts": {
     "test": "node --test",
-    "start:api": "node --loader ts-node/esm src/platform/api/server.ts"
+    "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
   "devDependencies": {
-    "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
-  "dependencies": {
-    "express": "^5.2.1"
-  }
+  "dependencies": {}
 }

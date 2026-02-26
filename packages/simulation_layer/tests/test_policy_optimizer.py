@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-from src.models.policy import PolicySchema, TransformationOperator
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.optimization.policy_optimizer import PolicyOptimizer
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.optimization.policy_optimizer import PolicyOptimizer
 
 def test_policy_optimizer_pareto_frontier():
     # 1. Setup Initial State Snapshot

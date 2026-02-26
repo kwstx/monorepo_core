@@ -1,0 +1,27 @@
+{
+    "name": "a2a-coordination-service",
+    "version": "1.0.0",
+    "description": "HTTP Service for A2A Coordination",
+    "main": "src/api/app.ts",
+    "scripts": {
+        "start": "ts-node src/api/app.ts",
+        "dev": "nodemon src/api/app.ts"
+    },
+    "dependencies": {
+        "a2a-coordination": "*",
+        "body-parser": "^2.2.2",
+        "cors": "^2.8.6",
+        "express": "^5.2.1",
+        "uuid": "^13.0.0"
+    },
+    "devDependencies": {
+        "@types/body-parser": "^1.19.6",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/node": "^20.0.0",
+        "@types/uuid": "^10.0.0",
+        "ts-node": "^10.9.0",
+        "typescript": "^5.0.0",
+        "nodemon": "^3.1.0"
+    }
+}

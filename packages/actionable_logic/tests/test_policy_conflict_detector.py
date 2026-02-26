@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from src.enforcement.policy_conflict_detector import ConflictSeverity, ConflictType, PolicyConflictDetector
-from src.enforcement.workflow import create_enforced_agent
-from src.live_update.engine import LiveUpdateEngine
-from src.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, PolicyScope, StructuredPolicy
-from src.repository.policy_repository import PolicyRepository
+from actionable_logic.enforcement.policy_conflict_detector import ConflictSeverity, ConflictType, PolicyConflictDetector
+from actionable_logic.enforcement.workflow import create_enforced_agent
+from actionable_logic.live_update.engine import LiveUpdateEngine
+from actionable_logic.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, PolicyScope, StructuredPolicy
+from actionable_logic.repository.policy_repository import PolicyRepository
 
 
 def _policy(

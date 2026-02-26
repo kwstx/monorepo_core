@@ -6,8 +6,8 @@ from statistics import mean
 from threading import RLock
 from typing import Any
 
-from src.enforcement.engine import PolicyEnforcer
-from src.models.policy_schema import StructuredPolicy
+from actionable_logic.enforcement.engine import PolicyEnforcer
+from actionable_logic.models.policy_schema import StructuredPolicy
 
 
 @dataclass(frozen=True)

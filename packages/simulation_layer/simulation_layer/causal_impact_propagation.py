@@ -6,8 +6,8 @@ from typing import Iterable, List, Sequence, Tuple
 
 from pydantic import BaseModel, Field
 
-from src.models.cooperative_state_snapshot import CooperativeStateSnapshot
-from src.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
+from simulation_layer.models.policy import PolicySchema, TransformationOperator
 
 
 class BaselineSignals(BaseModel):

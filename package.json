@@ -9,12 +9,16 @@
         "build:all": "npm run build --workspaces"
     },
     "workspaces": [
-        "a2a_coordination",
-        "economic_autonomy",
-        "enforcement_layer",
-        "identity_system",
-        "scorring_module",
-        "self_improvement_governance"
+        "packages/a2a_coordination",
+        "packages/actionable_logic",
+        "packages/economic_autonomy",
+        "packages/enforcement_layer",
+        "packages/identity_system",
+        "packages/scorring_module",
+        "packages/self_improvement_governance",
+        "packages/shared_utils",
+        "packages/simulation_layer",
+        "packages/task_formation"
     ],
     "dependencies": {
         "express": "^5.2.1",
