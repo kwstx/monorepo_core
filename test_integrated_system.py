@@ -29,7 +29,12 @@ async def main():
         "amount": 10.5,
         "slippage": 0.01
     }
-    auth_req = ActionAuthorizationRequest(agent_id=agent_id, action_type="execute_defi_trade", payload=action)
+    auth_req = ActionAuthorizationRequest(
+        agent_id=agent_id,
+        action_id="integration_action_001",
+        action_type="execute_defi_trade",
+        payload=action,
+    )
     print(f"Action Request: {auth_req}")
     
     # Authorizing the action will trigger:

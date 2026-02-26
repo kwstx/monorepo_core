@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from importlib import import_module
-from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional, Protocol
+from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional
 
 from .config import AutonomyConfig
 from .engine import AutonomyCore

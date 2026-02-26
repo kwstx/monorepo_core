@@ -19,7 +19,12 @@ async def main():
     
     agent_id = "agent_007"
     action = {"network": "ethereum", "gas_limit": 500000}
-    request = ActionAuthorizationRequest(agent_id=agent_id, action_type="deploy_smart_contract", payload=action)
+    request = ActionAuthorizationRequest(
+        agent_id=agent_id,
+        action_id="test_action_001",
+        action_type="deploy_smart_contract",
+        payload=action,
+    )
     
     print(f"\n--- Testing authorization for {agent_id} ---")
     print(f"Action Request: {request}\n")

@@ -22,6 +22,11 @@ class AutonomyClient:
         response = await self._core.authorize_action(request)
         return response.is_authorized
 
+    def authorize_sync(self, request: ActionAuthorizationRequest) -> bool:
+        """Synchronous wrapper for authorize."""
+        import asyncio
+        return asyncio.run(self.authorize(request))
+
     async def register_agent(self, request: AgentRegistrationRequest) -> str:
         """
         Register a new agent in the system.
@@ -29,11 +34,21 @@ class AutonomyClient:
         """
         return await self._core.register_agent(request)
 
+    def register_agent_sync(self, request: AgentRegistrationRequest) -> str:
+        """Synchronous wrapper for register_agent."""
+        import asyncio
+        return asyncio.run(self.register_agent(request))
+
     async def propose_change(self, request: GovernanceProposalRequest) -> bool:
         """
         Propose a change to the system governance or configuration.
         """
         return await self._core.propose_change(request)
+
+    def propose_change_sync(self, request: GovernanceProposalRequest) -> bool:
+        """Synchronous wrapper for propose_change."""
+        import asyncio
+        return asyncio.run(self.propose_change(request))
 
     def get_system_status(self) -> Dict[str, Any]:
         """
