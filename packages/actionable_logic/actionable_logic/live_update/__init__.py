@@ -17,3 +17,5 @@ __all__ = [
     "PolicyChangeSourceProtocol",
     "PolicyUpdateResult",
 ]
+
+__version__ = "0.1.0"

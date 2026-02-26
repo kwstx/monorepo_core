@@ -6,3 +6,5 @@ from .cross_domain_mapper import (
     CrossDomainMappingResult,
     OperationalContext,
 )
+
+__version__ = "0.1.0"

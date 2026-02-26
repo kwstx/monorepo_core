@@ -17,3 +17,5 @@ class ScoringModule(ScoringEngine):
             req_data = getattr(action, "model_dump", lambda: action.__dict__)()
             await self.state_store.save_audit_event(event_id, {"type": "score_calculation", "score": action_score, "request": req_data})
         return ScoringResult(action_score=action_score, threshold_met=action_score >= 0.0)
+
+__version__ = "0.1.0"

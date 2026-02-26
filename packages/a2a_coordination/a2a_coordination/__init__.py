@@ -16,3 +16,5 @@ class A2ACoordination(CoordinationEngine):
             msg_data = getattr(message, "model_dump", lambda: message.__dict__)()
             await self.state_store.save_audit_event(event_id, {"type": "coordination_broadcast", "message": msg_data})
         return CoordinationResult(success=True, nodes_notified=1)
+
+__version__ = "0.1.0"

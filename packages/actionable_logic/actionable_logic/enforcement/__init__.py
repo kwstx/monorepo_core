@@ -14,3 +14,5 @@ __all__ = [
     "PolicyConflict",
     "PolicyConflictDetector",
 ]
+
+__version__ = "0.1.0"

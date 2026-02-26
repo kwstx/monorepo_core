@@ -16,3 +16,5 @@ class SimulationLayer(SimulationEngine):
             req_data = getattr(request, "model_dump", lambda: request.__dict__)()
             await self.state_store.save_audit_event(event_id, {"type": "simulation", "request": req_data})
         return SimulationResponse(impact_score=0.5)
+
+__version__ = "0.1.0"

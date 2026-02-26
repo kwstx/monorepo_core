@@ -13,3 +13,5 @@ __all__ = [
     "BudgetEvaluationRequest", "BudgetEvaluationResponse",
     "SimulationRequest", "SimulationResponse"
 ]
+
+__version__ = "0.1.0"

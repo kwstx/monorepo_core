@@ -15,3 +15,5 @@ __all__ = [
     "GuardrailAdjustmentSuggestion",
     "TemplateRefinementSuggestion",
 ]
+
+__version__ = "0.1.0"

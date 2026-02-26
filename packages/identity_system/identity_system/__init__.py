@@ -23,3 +23,5 @@ class IdentitySystem(IdentityProvider):
             agent_data = getattr(request, "model_dump", lambda: request.__dict__)()
             await self.state_store.save_agent(request.agent_id, agent_data)
         return AgentRegistrationResponse(agent_id=request.agent_id, success=True)
+
+__version__ = "0.1.0"

@@ -22,3 +22,5 @@ class GovernanceModule(GovernanceEngine):
             prop_data = getattr(request, "model_dump", lambda: request.__dict__)()
             await self.state_store.save_proposal(f"gov_prop_{id(request)}", prop_data)
         return GovernanceProposalResponse(accepted=True, proposal_id="prop_1")
+
+__version__ = "0.1.0"

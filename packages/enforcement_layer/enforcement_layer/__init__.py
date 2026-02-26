@@ -17,3 +17,5 @@ class EnforcementLayer(EnforcementEngine):
             req_data = getattr(request, "model_dump", lambda: request.__dict__)()
             await self.state_store.save_audit_event(event_id, {"type": "enforcement_validation", "request": req_data})
         return ActionAuthorizationResponse(is_authorized=True)
+
+__version__ = "0.1.0"

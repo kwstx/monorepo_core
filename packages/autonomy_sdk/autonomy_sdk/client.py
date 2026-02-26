@@ -1,3 +1,5 @@
+import urllib.request
+import json
 from autonomy_core import AutonomyConfig, AutonomyContainer, AutonomyCore
 from autonomy_core.schemas.models import (
     AgentRegistrationRequest, ActionAuthorizationRequest, GovernanceProposalRequest
@@ -9,18 +11,45 @@ class AutonomyClient:
     The main entry point for external developers to interact with the Autonomy System.
     Wraps AutonomyCore to hide internal complexity and expose high-level orchestration.
     """
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, api_version: str = "v1", server_url: Optional[str] = None):
         self.config = config or {}
-        container = AutonomyContainer(_to_autonomy_config(self.config))
-        self._core: AutonomyCore = container.build_core()
+        self.api_version = api_version
+        self.server_url = server_url
+        
+        # Prepare context for requests (could be passed to HTTP client later)
+        self._request_headers = {"X-API-Version": self.api_version, "Content-Type": "application/json"}
+        
+        # Only initialize local core if no server URL is provided
+        if not self.server_url:
+            container = AutonomyContainer(_to_autonomy_config(self.config))
+            self._core: Optional[AutonomyCore] = container.build_core()
+        else:
+            self._core: Optional[AutonomyCore] = None
 
     async def authorize(self, request: ActionAuthorizationRequest) -> bool:
         """
         Check if an agent is authorized to perform a specific action.
         This triggers a full orchestration of identity, enforcement, economics, scoring, and simulation.
         """
-        response = await self._core.authorize_action(request)
-        return response.is_authorized
+        if self.server_url:
+            req = urllib.request.Request(
+                f"{self.server_url}/authorize",
+                data=request.model_dump_json().encode('utf-8'),
+                headers=self._request_headers,
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req) as response:
+                    data = json.loads(response.read().decode('utf-8'))
+                    return data.get("authorized", False)
+            except Exception as e:
+                print(f"Error calling remote server: {e}")
+                return False
+        else:
+            if not self._core:
+                raise ValueError("Core Engine is not initialized locally")
+            response = await self._core.authorize_action(request)
+            return response.is_authorized
 
     def authorize_sync(self, request: ActionAuthorizationRequest) -> bool:
         """Synchronous wrapper for authorize."""
@@ -32,7 +61,24 @@ class AutonomyClient:
         Register a new agent in the system.
         Returns the unique agent ID.
         """
-        return await self._core.register_agent(request)
+        if self.server_url:
+            req = urllib.request.Request(
+                f"{self.server_url}/register_agent",
+                data=request.model_dump_json().encode('utf-8'),
+                headers=self._request_headers,
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req) as response:
+                    data = json.loads(response.read().decode('utf-8'))
+                    return data.get("agent_id", "")
+            except Exception as e:
+                print(f"Error calling remote server: {e}")
+                return ""
+        else:
+            if not self._core:
+                raise ValueError("Core Engine is not initialized locally")
+            return await self._core.register_agent(request)
 
     def register_agent_sync(self, request: AgentRegistrationRequest) -> str:
         """Synchronous wrapper for register_agent."""

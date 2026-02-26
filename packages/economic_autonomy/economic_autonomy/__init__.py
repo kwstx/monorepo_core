@@ -16,3 +16,5 @@ class EconomicAutonomy(EconomicPolicyEngine):
             req_data = getattr(request, "model_dump", lambda: request.__dict__)()
             await self.state_store.save_audit_event(event_id, {"type": "economic_check", "request": req_data})
         return BudgetEvaluationResponse(has_funds=True, balance=100.0)
+
+__version__ = "0.1.0"

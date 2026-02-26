@@ -17,3 +17,5 @@ __all__ = [
     "UnifiedPolicy",
     "UniversalPolicyParser",
 ]
+
+__version__ = "0.1.0"
