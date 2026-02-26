@@ -1,10 +1,11 @@
 import logging
+from autonomy_core.interfaces import EnforcementEngine, ActionRequest, ValidationResult
 
-class EnforcementLayer:
+class EnforcementLayer(EnforcementEngine):
     """Python bridge for the Enforcement Layer Node.js backend."""
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def validate(self, action: dict) -> bool:
+    async def validate(self, action: ActionRequest) -> ValidationResult:
         self.logger.info(f"Validating action {action} via TS guardrails payload.")
-        return True
+        return ValidationResult(is_allowed=True)

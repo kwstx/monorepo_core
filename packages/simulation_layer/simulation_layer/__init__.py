@@ -1,25 +1,11 @@
 import logging
-from .api.policy_simulation_api import PolicySimulationAPI, PolicySimulationOutput
-from .causal_impact_propagation import CausalImpactPropagationEngine, SynergyShiftAnalyzer
-from .models.policy import PolicySchema, TransformationOperator
-from .models.cooperative_state_snapshot import CooperativeStateSnapshot
+from autonomy_core.interfaces import SimulationEngine, ActionRequest, SimulationResult
 
-class SimulationLayer:
-    """Python integration for Simulation Layer backend."""
+class SimulationLayer(SimulationEngine):
+    """Python bridge for the Simulation Layer Node.js backend."""
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def predict_impact(self, agent_id: str, action: dict) -> float:
-        self.logger.info(f"Simulating projected impact of {action} for {agent_id}.")
-        return 1.0
-
-__all__ = [
-    "PolicySimulationAPI",
-    "PolicySimulationOutput",
-    "CausalImpactPropagationEngine",
-    "SynergyShiftAnalyzer",
-    "PolicySchema",
-    "TransformationOperator",
-    "CooperativeStateSnapshot",
-    "SimulationLayer"
-]
+    async def predict_impact(self, agent_id: str, action: ActionRequest) -> SimulationResult:
+        self.logger.info(f"Predicting complex network effects for {agent_id} via TS graph.")
+        return SimulationResult(impact_score=0.5)

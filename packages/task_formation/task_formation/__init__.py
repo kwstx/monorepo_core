@@ -1,17 +1,11 @@
-from .adaptive_formation_api import AdaptiveFormationAPI, AdaptiveTeamConfiguration
-from .cooperative_context_model import CooperativeContextModel, CooperativeContextTensor
-from .cooperative_intelligence import CooperativeIntelligenceVector
-from .counterfactual_team_evaluator import CounterfactualTeamEvaluator
-from .entropy_constraint_module import EntropyConstraintModule
-from .team_optimizer import TeamOptimizer
+import logging
+from autonomy_core.interfaces import TaskFormationEngine, TaskProposal, TaskFormationResult
 
-__all__ = [
-    "AdaptiveFormationAPI",
-    "AdaptiveTeamConfiguration",
-    "CooperativeContextModel",
-    "CooperativeContextTensor",
-    "CooperativeIntelligenceVector",
-    "CounterfactualTeamEvaluator",
-    "EntropyConstraintModule",
-    "TeamOptimizer"
-]
+class TaskFormation(TaskFormationEngine):
+    """Python bridge for Task Formation."""
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+    async def form_task(self, proposal: TaskProposal) -> TaskFormationResult:
+        self.logger.info(f"Forming task {proposal.task_id}")
+        return TaskFormationResult(formed=True, assigned_agents=[])

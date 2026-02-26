@@ -2,4 +2,6 @@
 name = "a2a_coordination"
 version = "0.1.0"
 description = "a2a_coordination package"
-dependencies = []
+dependencies = [
+    "autonomy_core"
+]

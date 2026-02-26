@@ -1,130 +1,97 @@
 """
 Autonomy Core Engine
-Orchestrates the various subsystems across the agent-infra monorepo.
+Orchestrates the various subsystems using their defined interfaces.
 """
 
 import logging
-
-# ====== Imports from ALL packages inside packages/ ====== #
-
-# 1. Identity System
-from identity_system import IdentitySystem
-
-# 2. Enforcement Layer
-from enforcement_layer import EnforcementLayer
-
-# 3. Economic Autonomy
-from economic_autonomy import EconomicAutonomy
-
-# 4. A2A Coordination
-from a2a_coordination import A2ACoordination
-
-# 5. Scoring Module
-from scorring_module import ScoringModule
-
-# 6. Simulation Layer
-from simulation_layer import SimulationLayer
-
-# 7. Self Improvement Governance
-from self_improvement_governance import GovernanceModule
-
-# 8. Actionable Logic
-try:
-    from actionable_logic import ActionableLogic
-except ImportError:
-    class ActionableLogic:
-        pass
-
-# 9. Task Formation
-try:
-    from task_formation import TaskFormation
-except ImportError:
-    class TaskFormation:
-        pass
-
-# 10. Shared Utils
-try:
-    from shared_utils import SharedUtils
-except ImportError:
-    class SharedUtils:
-        pass
-
+from .interfaces import (
+    IdentityProvider, EnforcementEngine, EconomicPolicyEngine,
+    CoordinationEngine, ScoringEngine, SimulationEngine, GovernanceEngine,
+    TaskFormationEngine,
+    ActionRequest, CoordinationMessage, GovernanceRecord, AgentIdentity, ChangeProposal
+)
 
 class AutonomyCore:
-    def __init__(self):
+    def __init__(self,
+                 identity: IdentityProvider,
+                 enforcement: EnforcementEngine,
+                 economic: EconomicPolicyEngine,
+                 coordination: CoordinationEngine,
+                 scoring: ScoringEngine,
+                 simulation: SimulationEngine,
+                 governance: GovernanceEngine,
+                 task_formation: TaskFormationEngine = None):
         """
-        Initializes identity, enforcement, economic, coordination, scoring, simulation, and governance components.
+        Initializes the core with interface implementations.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         
-        # Primary Initialized Components needed for authorize_action
-        self.identity = IdentitySystem()
-        self.enforcement = EnforcementLayer()
-        self.economic = EconomicAutonomy()
-        self.coordination = A2ACoordination()
-        self.scoring = ScoringModule()
-        self.simulation = SimulationLayer()
-        self.governance = GovernanceModule()
+        self.identity = identity
+        self.enforcement = enforcement
+        self.economic = economic
+        self.coordination = coordination
+        self.scoring = scoring
+        self.simulation = simulation
+        self.governance = governance
+        self.task_formation = task_formation
 
-    def authorize_action(self, agent_id: str, action: dict) -> bool:
+    async def authorize_action(self, agent_id: str, action: dict) -> bool:
         """
         Orchestrates multiple components to determine if an action should proceed.
-        
-        Args:
-            agent_id (str): The ID of the agent performing the action.
-            action (dict): Information describing the action.
-        
-        Returns:
-            bool: True if authorized, False otherwise.
         """
         self.logger.info(f"Authorizing action {action} for agent {agent_id}")
+        
+        action_req = ActionRequest(agent_id=agent_id, action_type=action.get("type", "unknown"), payload=action)
 
         # 1. Identity Check
-        if not self.identity.verify(agent_id):
+        id_res = await self.identity.verify(agent_id)
+        if not id_res.is_valid:
             self.logger.warning(f"Identity verification failed for {agent_id}.")
             return False
 
         # 2. Guardrails / Enforcement Check
-        if not self.enforcement.validate(action):
+        enf_res = await self.enforcement.validate(action_req)
+        if not enf_res.is_allowed:
             self.logger.warning(f"Action validation failed for {agent_id}.")
             return False
 
         # 3. Economic capability
-        if not self.economic.has_funds(agent_id, action):
+        eco_res = await self.economic.has_funds(agent_id, action_req)
+        if not eco_res.has_funds:
             self.logger.warning(f"Insufficient funds for agent {agent_id} to perform action.")
             return False
 
         # 4. Simulation / Impact
-        impact_score = self.simulation.predict_impact(agent_id, action)
+        sim_res = await self.simulation.predict_impact(agent_id, action_req)
 
         # 5. Global Action Scoring
-        action_score = self.scoring.calculate_score(action, impact_score)
-        if action_score < 0.0:  # Arbitrary threshold
-            self.logger.warning(f"Action scoring below threshold ({action_score}) for {agent_id}.")
+        score_res = await self.scoring.calculate_score(action_req, sim_res.impact_score)
+        if not score_res.threshold_met:
+            self.logger.warning(f"Action scoring below threshold for {agent_id}.")
             return False
 
         # 6. Coordination (inform other agents or update shared state)
-        self.coordination.notify_peers(agent_id, action)
+        await self.coordination.notify_peers(CoordinationMessage(sender_id=agent_id, action=action_req))
 
         # 7. Governance / Logging / Self-Improvement
-        self.governance.record_action(agent_id, action, action_score)
+        await self.governance.record_action(GovernanceRecord(agent_id=agent_id, action=action_req, action_score=score_res.action_score))
 
         self.logger.info(f"Action successfully authorized for agent {agent_id}.")
         return True
 
-    def register_agent(self, agent_info: dict) -> str:
+    async def register_agent(self, agent_info: dict) -> str:
         """
         Registers a new agent into the system via IdentitySystem.
         """
-        agent_id = agent_info.get("id") or agent_info.get("name") or "agent_" + str(hash(str(agent_info)) % 10000)
+        agent_id = agent_info.get("id") or agent_info.get("name") or "agent_" + str(hash(str(agent_info)))
         self.logger.info(f"Registering agent: {agent_id}")
-        # In a real scenario, this would call self.identity.register(agent_info)
+        await self.identity.register(AgentIdentity(agent_id=agent_id, name=agent_info.get("name")))
         return agent_id
 
-    def propose_change(self, agent_id: str, change_request: dict) -> bool:
+    async def propose_change(self, agent_id: str, change_request: dict) -> bool:
         """
         Proposes a system or configuration change via GovernanceModule.
         """
         self.logger.info(f"Agent {agent_id} proposing change: {change_request}")
-        # In a real scenario, this would call self.governance.submit_proposal(agent_id, change_request)
+        await self.governance.submit_proposal(agent_id, ChangeProposal(proposer_id=agent_id, changes=change_request))
         return True

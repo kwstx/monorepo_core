@@ -3,5 +3,5 @@ name = "autonomy_sdk"
 version = "0.1.0"
 description = "Autonomy SDK"
 dependencies = [
-    "autonomy_core"
+    "autonomy_core", "identity_system", "enforcement_layer", "economic_autonomy", "a2a_coordination", "scorring_module", "simulation_layer", "self_improvement_governance"
 ]

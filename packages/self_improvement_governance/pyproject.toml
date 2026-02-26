@@ -2,4 +2,6 @@
 name = "self_improvement_governance"
 version = "0.1.0"
 description = "self_improvement_governance package"
-dependencies = []
+dependencies = [
+    "autonomy_core"
+]
