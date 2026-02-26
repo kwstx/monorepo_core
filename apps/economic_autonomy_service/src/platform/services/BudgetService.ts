@@ -1,10 +1,14 @@
-import type { AgentBudget } from '../../models/AgentBudget.js';
-import { PreExecutionBudgetGate, type GateEvaluationResult, type ProposedAgentAction } from '../../PreExecutionBudgetGate.js';
-import type { ActionPnLInput } from '../../PnLTracker.js';
+import type {
+  AgentBudget,
+  GateEvaluationResult,
+  ProposedAgentAction,
+  ActionPnLInput
+} from 'economic_autonomy';
+import { PreExecutionBudgetGate } from 'economic_autonomy';
 import { InMemoryPlatformStore } from '../state/InMemoryPlatformStore.js';
 
 export class BudgetService {
-  constructor(private readonly store: InMemoryPlatformStore) {}
+  constructor(private readonly store: InMemoryPlatformStore) { }
 
   public getOrCreateBudget(agentId: string): AgentBudget {
     const existing = this.store.budgets.get(agentId);

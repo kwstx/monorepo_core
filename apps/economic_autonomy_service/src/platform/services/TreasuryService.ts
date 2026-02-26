@@ -1,12 +1,12 @@
-import type { ResourceType } from '../../models/AgentBudget.js';
-import { TreasuryEngine, type JointProject } from '../../TreasuryEngine.js';
+import type { ResourceType, JointProject } from 'economic_autonomy';
+import { TreasuryEngine } from 'economic_autonomy';
 import { BudgetService } from './BudgetService.js';
 
 export class TreasuryService {
   constructor(
     private readonly treasuryEngine: TreasuryEngine,
     private readonly budgetService: BudgetService
-  ) {}
+  ) { }
 
   public createPool(
     poolId: string,

@@ -1,4 +1,4 @@
-import type { ProposedAgentAction } from '../../PreExecutionBudgetGate.js';
+import type { ProposedAgentAction } from 'economic_autonomy';
 import { BudgetService } from './BudgetService.js';
 
 export interface PredictiveAllocationScore {
@@ -17,7 +17,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 export class PredictiveAllocationService {
-  constructor(private readonly budgetService: BudgetService) {}
+  constructor(private readonly budgetService: BudgetService) { }
 
   public rankActions(agentId: string, actions: ProposedAgentAction[]): PredictiveAllocationScore[] {
     const ranked = actions.map((action) => {
@@ -26,7 +26,7 @@ export class PredictiveAllocationService {
 
       const cooperativeIntelligenceWeight = clamp(
         (predictive.cooperativeSynergy * 0.65) +
-          (Math.tanh(predictive.weightedCooperativeSupport / Math.max(1, action.estimatedCost)) * 0.35),
+        (Math.tanh(predictive.weightedCooperativeSupport / Math.max(1, action.estimatedCost)) * 0.35),
         0,
         1
       );

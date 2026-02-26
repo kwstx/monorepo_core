@@ -1,4 +1,4 @@
-import type { AgentBudget } from '../../models/AgentBudget.js';
+import type { AgentBudget } from 'economic_autonomy';
 
 export class InMemoryPlatformStore {
   public readonly budgets = new Map<string, AgentBudget>();
