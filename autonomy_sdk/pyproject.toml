@@ -1,0 +1,7 @@
+[project]
+name = "autonomy_sdk"
+version = "0.1.0"
+description = "Autonomy SDK"
+dependencies = [
+    "autonomy_core"
+]
