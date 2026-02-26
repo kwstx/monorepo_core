@@ -34,10 +34,17 @@ class TestSystemHealth(unittest.TestCase):
         """Verify Actionable Logic API is up on port 8000."""
         print("Checking Actionable Logic API...")
         try:
-            response = requests.get("http://localhost:8000/")
+            response = requests.get("http://127.0.0.1:8000/")
             self.assertEqual(response.status_code, 200)
             self.assertIn("PolicyAPI", response.json()["message"])
         except Exception as e:
+            # If failed, dump logs
+            print(f"Error: {e}")
+            for log_file in ["actionable_logic.log", "a2a_coordination.log", "economic_autonomy.log"]:
+                if os.path.exists(log_file):
+                    print(f"\n--- {log_file} ---")
+                    with open(log_file, "r") as f:
+                        print(f.read())
             self.fail(f"Actionable Logic API failed: {e}")
 
     def test_ts_api_health(self):
@@ -45,10 +52,17 @@ class TestSystemHealth(unittest.TestCase):
         print("Checking Economic Autonomy API...")
         try:
             # We need to wait a bit longer for TS compilation if it's slow
-            response = requests.get("http://localhost:3000/budget/test-agent")
+            response = requests.get("http://127.0.0.1:3000/budget/test-agent")
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["status"], "success")
         except Exception as e:
+            # If failed, dump logs
+            print(f"Error: {e}")
+            for log_file in ["actionable_logic.log", "a2a_coordination.log", "economic_autonomy.log"]:
+                if os.path.exists(log_file):
+                    print(f"\n--- {log_file} ---")
+                    with open(log_file, "r") as f:
+                        print(f.read())
             self.fail(f"Economic Autonomy API failed: {e}")
 
 if __name__ == "__main__":
