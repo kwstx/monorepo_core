@@ -8,23 +8,7 @@ from .config import AutonomyConfig
 from .engine import AutonomyCore
 
 
-class StateBackend(Protocol):
-    name: str
-
-
-@dataclass
-class InMemoryStateBackend:
-    name: str = "memory"
-
-
-@dataclass
-class SqliteStateBackend:
-    name: str = "sqlite"
-
-
-@dataclass
-class RedisStateBackend:
-    name: str = "redis"
+from .state import StateStore, InMemoryStateStore, FileStateStore
 
 
 Factory = Callable[[AutonomyConfig, "AutonomyContainer"], Any]
@@ -54,11 +38,17 @@ class AutonomyContainer:
             task_formation=self.resolve_optional("task_formation"),
         )
 
+    def register_factory(self, dependency: str, implementation: str, factory: Factory) -> None:
+        self._factories.setdefault(dependency, {})[implementation] = factory
+
     def resolve(self, dependency: str) -> Any:
         if dependency in self._instances:
             return self._instances[dependency]
 
-        implementation = self.config.implementation_for(dependency)
+        if dependency == "state_backend":
+            implementation = self.config.state_backend
+        else:
+            implementation = self.config.implementation_for(dependency)
         options = self._factories.get(dependency, {})
         if implementation not in options:
             available = ", ".join(sorted(options.keys())) or "<none>"
@@ -75,15 +65,8 @@ class AutonomyContainer:
             return None
         return self.resolve(dependency)
 
-    def state_backend(self) -> StateBackend:
-        backend = self.config.state_backend
-        if backend == "memory":
-            return InMemoryStateBackend()
-        if backend == "sqlite":
-            return SqliteStateBackend()
-        if backend == "redis":
-            return RedisStateBackend()
-        raise ValueError(f"Unsupported state backend: {backend}")
+    def state_backend(self) -> StateStore:
+        return self.resolve("state_backend")
 
     def _build_factories(
         self, overrides: Mapping[str, Mapping[str, Factory]]
@@ -100,9 +83,11 @@ class AutonomyContainer:
             },
             "task_formation": {"default": _constructor_factory("task_formation", "TaskFormation")},
             "state_backend": {
-                "memory": lambda _cfg, _container: InMemoryStateBackend(),
-                "sqlite": lambda _cfg, _container: SqliteStateBackend(),
-                "redis": lambda _cfg, _container: RedisStateBackend(),
+                "memory": lambda _cfg, _container: InMemoryStateStore(),
+                "file": lambda _cfg, _container: FileStateStore(base_path=_cfg.options_for("state_backend").get("path", "./state_data")),
+                # Placeholders for un-implemented backends
+                "sqlite": lambda _cfg, _container: InMemoryStateStore(),
+                "redis": lambda _cfg, _container: InMemoryStateStore(),
             },
         }
 
@@ -116,6 +101,10 @@ def _constructor_factory(module_name: str, class_name: str) -> Factory:
     def _factory(_cfg: AutonomyConfig, _container: AutonomyContainer) -> Any:
         module = import_module(module_name)
         constructor = getattr(module, class_name)
-        return constructor()
+        try:
+            return constructor(state_store=_container.resolve("state_backend"))
+        except TypeError:
+            # Fallback for when the class doesn't accept state_store yet
+            return constructor()
 
     return _factory

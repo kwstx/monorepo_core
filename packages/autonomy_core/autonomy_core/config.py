@@ -15,7 +15,7 @@ ModuleName = Literal[
     "task_formation",
 ]
 
-StateBackendName = Literal["memory", "sqlite", "redis"]
+StateBackendName = Literal["memory", "file", "sqlite", "redis"]
 
 
 @dataclass(frozen=True)

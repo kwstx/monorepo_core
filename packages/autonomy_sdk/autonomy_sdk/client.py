@@ -1,4 +1,4 @@
-from autonomy_core import AutonomyCore
+from autonomy_core import AutonomyConfig, AutonomyContainer, AutonomyCore
 from autonomy_core.schemas.models import (
     AgentRegistrationRequest, ActionAuthorizationRequest, GovernanceProposalRequest
 )
@@ -10,24 +10,9 @@ class AutonomyClient:
     Wraps AutonomyCore to hide internal complexity and expose high-level orchestration.
     """
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        from identity_system import IdentitySystem
-        from enforcement_layer import EnforcementLayer
-        from economic_autonomy import EconomicAutonomy
-        from a2a_coordination import A2ACoordination
-        from scorring_module import ScoringModule
-        from simulation_layer import SimulationLayer
-        from self_improvement_governance import GovernanceModule
-        
-        self._core = AutonomyCore(
-            identity=IdentitySystem(),
-            enforcement=EnforcementLayer(),
-            economic=EconomicAutonomy(),
-            coordination=A2ACoordination(),
-            scoring=ScoringModule(),
-            simulation=SimulationLayer(),
-            governance=GovernanceModule()
-        )
         self.config = config or {}
+        container = AutonomyContainer(_to_autonomy_config(self.config))
+        self._core: AutonomyCore = container.build_core()
 
     async def authorize(self, request: ActionAuthorizationRequest) -> bool:
         """
@@ -59,3 +44,18 @@ class AutonomyClient:
             "version": "1.0.0",
             "connected": True
         }
+
+
+def _to_autonomy_config(config: Dict[str, Any]) -> AutonomyConfig:
+    if not config:
+        return AutonomyConfig()
+    defaults = AutonomyConfig()
+    return AutonomyConfig(
+        risk_thresholds=config.get("risk_thresholds", defaults.risk_thresholds),
+        budget_limits=config.get("budget_limits", defaults.budget_limits),
+        governance_rules=config.get("governance_rules", defaults.governance_rules),
+        enabled_modules=config.get("enabled_modules", defaults.enabled_modules),
+        state_backend=config.get("state_backend", defaults.state_backend),
+        implementations=config.get("implementations", defaults.implementations),
+        module_options=config.get("module_options", defaults.module_options),
+    )

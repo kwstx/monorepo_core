@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from typing import Optional, Dict, Any
-from autonomy_core import AutonomyCore
+from autonomy_core import AutonomyConfig, AutonomyContainer
 from autonomy_core.schemas.models import (
     AgentRegistrationRequest, ActionAuthorizationRequest
 )
@@ -11,24 +10,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Instantiate AutonomyCore as requested
-from identity_system import IdentitySystem
-from enforcement_layer import EnforcementLayer
-from economic_autonomy import EconomicAutonomy
-from a2a_coordination import A2ACoordination
-from scorring_module import ScoringModule
-from simulation_layer import SimulationLayer
-from self_improvement_governance import GovernanceModule
-
-core = AutonomyCore(
-    identity=IdentitySystem(),
-    enforcement=EnforcementLayer(),
-    economic=EconomicAutonomy(),
-    coordination=A2ACoordination(),
-    scoring=ScoringModule(),
-    simulation=SimulationLayer(),
-    governance=GovernanceModule()
-)
+core = AutonomyContainer(AutonomyConfig()).build_core()
 
 @app.post("/authorize")
 async def authorize(request: ActionAuthorizationRequest):
