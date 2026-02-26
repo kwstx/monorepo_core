@@ -24,13 +24,13 @@ jobs:
         export REPO_ROOT=$(pwd)
         
         echo "Running Actionable Logic tests..."
-        (cd $REPO_ROOT/actionable_logic && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/actionable_logic:$REPO_ROOT/actionable_logic/src && pytest tests)
+        (cd $REPO_ROOT/packages/actionable_logic && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/packages/actionable_logic:$REPO_ROOT/packages/actionable_logic/src && pytest tests)
         
         echo "Running Simulation Layer tests..."
-        (cd $REPO_ROOT/simulation_layer && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/simulation_layer:$REPO_ROOT/simulation_layer/src && pytest tests)
+        (cd $REPO_ROOT/packages/simulation_layer && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/packages/simulation_layer:$REPO_ROOT/packages/simulation_layer/src && pytest tests)
         
         echo "Running Task Formation tests..."
-        (cd $REPO_ROOT/task_formation && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/task_formation && pytest .)
+        (cd $REPO_ROOT/packages/task_formation && export PYTHONPATH=$PYTHONPATH:$REPO_ROOT:$REPO_ROOT/packages/task_formation && pytest .)
 
   test-typescript:
     runs-on: ubuntu-latest
