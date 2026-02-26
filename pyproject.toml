@@ -22,9 +22,44 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["shared_utils", "actionable_logic", "simulation_layer", "task_formation"]
+packages = [
+    "a2a_coordination",
+    "actionable_logic",
+    "economic_autonomy",
+    "enforcement_layer",
+    "identity_system",
+    "scorring_module",
+    "self_improvement_governance",
+    "shared_utils",
+    "simulation_layer",
+    "task_formation",
+    "autonomy_core",
+    "autonomy_sdk",
+    "autonomy_server",
+]
+
+[tool.setuptools.package-dir]
+"a2a_coordination" = "packages/a2a_coordination/a2a_coordination"
+"actionable_logic" = "packages/actionable_logic/actionable_logic"
+"economic_autonomy" = "packages/economic_autonomy/economic_autonomy"
+"enforcement_layer" = "packages/enforcement_layer/enforcement_layer"
+"identity_system" = "packages/identity_system/identity_system"
+"scorring_module" = "packages/scorring_module/scorring_module"
+"self_improvement_governance" = "packages/self_improvement_governance/self_improvement_governance"
+"shared_utils" = "packages/shared_utils/shared_utils"
+"simulation_layer" = "packages/simulation_layer/simulation_layer"
+"task_formation" = "packages/task_formation/task_formation"
+"autonomy_core" = "packages/autonomy_core/autonomy_core"
+"autonomy_sdk" = "packages/autonomy_sdk/autonomy_sdk"
+"autonomy_server" = "apps/autonomy_server/autonomy_server"
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
-testpaths = ["tests", "actionable_logic/tests", "simulation_layer/tests", "task_formation"]
+testpaths = [
+    "tests",
+    "packages/*/tests",
+    "apps/*/tests",
+]
+
+
 

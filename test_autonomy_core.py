@@ -1,21 +1,7 @@
-import sys
-import os
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Add the autonomy_core package
-sys.path.insert(0, os.path.join(current_dir, 'autonomy_core'))
-
-# Also add the individual packages so they can be imported
-packages_dir = os.path.join(current_dir, 'packages')
-if os.path.isdir(packages_dir):
-    for d in os.listdir(packages_dir):
-        pkg_path = os.path.join(packages_dir, d)
-        if os.path.isdir(pkg_path):
-            sys.path.insert(0, pkg_path)
-
+# The packages are now installed in editable mode via the root pyproject.toml
 import logging
 from autonomy_core import AutonomyCore
+
 
 logging.basicConfig(
     level=logging.INFO,
