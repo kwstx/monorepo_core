@@ -111,3 +111,20 @@ class AutonomyCore:
 
         self.logger.info(f"Action successfully authorized for agent {agent_id}.")
         return True
+
+    def register_agent(self, agent_info: dict) -> str:
+        """
+        Registers a new agent into the system via IdentitySystem.
+        """
+        agent_id = agent_info.get("id") or agent_info.get("name") or "agent_" + str(hash(str(agent_info)) % 10000)
+        self.logger.info(f"Registering agent: {agent_id}")
+        # In a real scenario, this would call self.identity.register(agent_info)
+        return agent_id
+
+    def propose_change(self, agent_id: str, change_request: dict) -> bool:
+        """
+        Proposes a system or configuration change via GovernanceModule.
+        """
+        self.logger.info(f"Agent {agent_id} proposing change: {change_request}")
+        # In a real scenario, this would call self.governance.submit_proposal(agent_id, change_request)
+        return True
