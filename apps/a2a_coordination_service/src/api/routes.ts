@@ -1,6 +1,6 @@
 
 import express, { Request, Response } from 'express';
-import { CoordinationService } from './service/CoordinationService';
+import { CoordinationService } from './service/CoordinationService.js';
 import { AgentCoordinationMessage } from 'a2a-coordination';
 
 const service = new CoordinationService();

@@ -41,12 +41,12 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": [
-        "../shared_utils/typescript/*"
+        "../shared_utils/src/*"
       ]
     }
   },
   "include": [
     "src/**/*",
-    "../shared_utils/typescript/**/*"
+    "../shared_utils/src/**/*"
   ]
 }

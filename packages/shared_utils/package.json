@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Shared project utilities",
     "main": "src/index.ts",
+    "type": "module",
     "scripts": {
         "test": "node --test",
         "build": "tsc"
