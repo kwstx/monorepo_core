@@ -1,0 +1,130 @@
+import { PnLTracker } from './PnLTracker.js';
+import { DynamicBudgetEngine } from './DynamicBudgetEngine.js';
+/**
+ * FeedbackIntegrationLayer
+ * Bridge between real-world PnL outcomes and the DynamicBudgetEngine.
+ * Analyzes historical performance to inform future budget allocations.
+ */
+export class FeedbackIntegrationLayer {
+    pnlTracker;
+    budgetEngine;
+    constructor(pnlTracker, budgetEngine) {
+        this.pnlTracker = pnlTracker;
+        this.budgetEngine = budgetEngine;
+    }
+    /**
+     * Processes PnL results for an agent and triggers a budget recalibration.
+     * @param budget The current agent budget record.
+     * @returns The recalibration result and generated insights.
+     */
+    processFeedback(budget) {
+        const agentId = budget.agentId;
+        const ledger = this.pnlTracker.getLedger().filter(entry => entry.agentId === agentId);
+        if (ledger.length === 0) {
+            throw new Error(`No PnL data found for agent ${agentId}. Continuous feedback requires at least one historical record.`);
+        }
+        // 1. Generate Recalibration Input from PnL Ledger
+        const recalibrationInput = this.mapLedgerToRecalibrationInput(budget, ledger);
+        // 2. Perform Recalibration using the engine
+        const recalibrationResult = this.budgetEngine.recalibrate(budget, recalibrationInput);
+        // 3. Extract deep insights (Inefficiencies, Utilization spikes)
+        const insights = this.analyzePatterns(budget, ledger);
+        return {
+            recalibrationResult,
+            insights
+        };
+    }
+    /**
+     * Converts a list of PnL log entries into the structured format expected by the DynamicBudgetEngine.
+     */
+    mapLedgerToRecalibrationInput(budget, ledger) {
+        const totalEntries = ledger.length;
+        const successfulEntries = ledger.filter(e => e.status === 'executed').length;
+        const totalRevenue = ledger.reduce((sum, e) => sum + e.revenue, 0);
+        const totalCosts = ledger.reduce((sum, e) => sum + e.totalCosts, 0);
+        const totalNetPnL = ledger.reduce((sum, e) => sum + e.netPnL, 0);
+        const successRate = totalEntries > 0 ? successfulEntries / totalEntries : 0;
+        // Efficiency Score: normalized ratio of revenue to costs
+        // If costs are 0 but revenue > 0, it's highly efficient (1.0).
+        const efficiencyScore = totalCosts > 0
+            ? Math.min(1.0, totalRevenue / (totalCosts * 2)) // Simple heuristic
+            : (totalRevenue > 0 ? 1.0 : 0.5);
+        const actualRoi = totalCosts > 0 ? totalNetPnL / totalCosts : 0;
+        // Sentiment estimation based on PnL vs Expectations (simplified for this layer)
+        const sentimentScore = actualRoi > 0.2 ? 0.8 : (actualRoi < 0 ? -0.5 : 0.2);
+        // Cooperative impact: average of cooperative contributions
+        const totalCoop = ledger.reduce((sum, e) => sum + e.totalCooperativeContribution, 0);
+        const coopFactor = 1.0 + (totalCoop / (totalCosts + 1) * 0.5);
+        return {
+            agentId: budget.agentId,
+            metrics: {
+                successRate,
+                efficiencyScore,
+                latencyMs: 0, // Placeholder as PnL doesn't track latency directly
+                reliabilityScore: successRate
+            },
+            simulations: [], // Simulations would typically come from an ImpactSimulationModule
+            roi: {
+                actualRoi,
+                projectedRoi: actualRoi * 1.1, // Optimistic projection
+                confidenceInterval: [actualRoi * 0.8, actualRoi * 1.2]
+            },
+            feedback: {
+                approvalRate: successRate,
+                sentimentScore: sentimentScore,
+                notes: `Automatically derived from ${totalEntries} PnL ledger records.`
+            },
+            cooperativeImpactFactor: Math.min(2.0, coopFactor)
+        };
+    }
+    /**
+     * Flags inefficiencies and utilization patterns by analyzing the ledger and current budget.
+     */
+    analyzePatterns(budget, ledger) {
+        const inefficiencies = [];
+        const utilizationPatterns = [];
+        const totalRevenue = ledger.reduce((sum, e) => sum + e.revenue, 0);
+        const totalCosts = ledger.reduce((sum, e) => sum + e.totalCosts, 0);
+        const totalNetPnL = ledger.reduce((sum, e) => sum + e.netPnL, 0);
+        const successRate = ledger.length > 0 ? ledger.filter(e => e.status === 'executed').length / ledger.length : 0;
+        // 1. Detect Inefficiencies
+        ledger.forEach(entry => {
+            if (entry.totalCosts > entry.revenue && entry.netPnL < 0) {
+                if (entry.longTermStrategicImpact < entry.totalCosts * 0.2) {
+                    inefficiencies.push(`Action ${entry.actionId} (${entry.actionType}) resulted in net loss with low strategic offset.`);
+                }
+            }
+        });
+        if (totalCosts > totalRevenue && ledger.length > 3) {
+            inefficiencies.push(`Aggregate performance is currently cash-flow negative (ROI: ${(totalNetPnL / totalCosts).toFixed(2)}).`);
+        }
+        // 2. Detect Utilization Patterns
+        for (const alloc of budget.allocations) {
+            const usageRatio = alloc.spentBudget / alloc.totalBudget;
+            if (usageRatio > 0.9) {
+                utilizationPatterns.push(`Resource "${alloc.resourceType}" is nearly exhausted (${(usageRatio * 100).toFixed(1)}% utilized). High risk of execution blocks.`);
+            }
+            else if (usageRatio < 0.1 && alloc.totalBudget > 0) {
+                utilizationPatterns.push(`Resource "${alloc.resourceType}" is significantly under-utilized (${(usageRatio * 100).toFixed(1)}% used). Potential for reallocation.`);
+            }
+            // Cross-reference with ledger for specific resource-heavy failures
+            const resourceHeavyFailures = ledger.filter(e => e.status === 'failed' && e.directCosts > (alloc.totalBudget / 10)).length;
+            if (resourceHeavyFailures > 0) {
+                utilizationPatterns.push(`Detected ${resourceHeavyFailures} high-cost failures for agent ${budget.agentId}. Budget burn rate may be volatile.`);
+            }
+        }
+        return {
+            agentId: budget.agentId,
+            inefficiencies,
+            utilizationPatterns,
+            performanceSummary: {
+                totalRevenue,
+                totalCosts,
+                netPnL: totalNetPnL,
+                averageRoi: totalCosts > 0 ? totalNetPnL / totalCosts : 0,
+                successRate
+            }
+        };
+    }
+}
+//# sourceMappingURL=FeedbackIntegrationLayer.js.map

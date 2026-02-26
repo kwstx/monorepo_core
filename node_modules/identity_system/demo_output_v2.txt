@@ -1,0 +1,19 @@
+﻿--- Action Validation Demo ---
+
+Testing: Allowed Action (Direct Scope)
+Authorized: true
+
+Testing: Prohibited Action (Not in scope)
+Authorized: false
+Violations:
+ - [SCOPE_VIOLATION] No matching authority rule found. (error)
+
+Testing: Approval Required Action (Cross-unit Finance)
+Authorized: true
+Violations:
+ - [APPROVAL_REQUIRED] Finance data access requires approval (warning)
+
+Testing: Context Mismatch (Prod action with Dev authority)
+Authorized: false
+Violations:
+ - [CONTEXT_MISMATCH] Action target environment 'production' is not authorized for this agent's current identity. (error)
