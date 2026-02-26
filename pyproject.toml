@@ -57,9 +57,11 @@ packages = [
 python_files = "test_*.py"
 testpaths = [
     "tests",
+    "integration_tests",
     "packages/*/tests",
     "apps/*/tests",
 ]
+asyncio_mode = "auto"
 
 
 
