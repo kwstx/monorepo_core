@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
-from src.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
+from actionable_logic.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope
 
 class SimulationRequest(BaseModel):
     policy: StructuredPolicy = Field(..., description="The policy to simulate.")

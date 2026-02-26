@@ -12,12 +12,14 @@ class TestSystemHealth(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("\n[Setup] Starting orchestrator...")
+        env = os.environ.copy()
         cls.orchestrator = subprocess.Popen(
             ["python", "orchestrate.py"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            preexec_fn=os.setsid if os.name != 'nt' else None
+            preexec_fn=os.setsid if os.name != 'nt' else None,
+            env=env
         )
         # Give services time to boot
         time.sleep(20)

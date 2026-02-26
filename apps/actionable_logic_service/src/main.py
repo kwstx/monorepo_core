@@ -1,12 +1,12 @@
 import uuid
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Depends, Query
-from src.models.policy_schema import StructuredPolicy
-from src.repository.policy_repository import PolicyRepository
-from src.version_control.engine import VersionControlEngine
-from src.enforcement.engine import PolicyEnforcer
-from src.enforcement.guardrails import AdaptiveGuardrailsEngine
-from src.api.models import SimulationRequest, SimulationResponse, ActionCheckRequest, ComplianceTrace
+from actionable_logic.models.policy_schema import StructuredPolicy
+from actionable_logic.repository.policy_repository import PolicyRepository
+from actionable_logic.version_control.engine import VersionControlEngine
+from actionable_logic.enforcement.engine import PolicyEnforcer
+from actionable_logic.enforcement.guardrails import AdaptiveGuardrailsEngine
+from src.models import SimulationRequest, SimulationResponse, ActionCheckRequest, ComplianceTrace
 
 app = FastAPI(
     title="PolicyAPI",

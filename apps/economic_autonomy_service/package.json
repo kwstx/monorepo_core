@@ -5,8 +5,8 @@
     "main": "src/platform/api/server.js",
     "type": "module",
     "scripts": {
-        "start": "node --loader ts-node/esm src/platform/api/server.ts",
-        "dev": "nodemon --loader ts-node/esm src/platform/api/server.ts"
+        "start": "tsx src/platform/api/server.ts",
+        "dev": "tsx watch src/platform/api/server.ts"
     },
     "dependencies": {
         "economic_autonomy": "*",

@@ -4,8 +4,8 @@
     "description": "HTTP Service for A2A Coordination",
     "main": "src/api/app.ts",
     "scripts": {
-        "start": "ts-node src/api/app.ts",
-        "dev": "nodemon src/api/app.ts"
+        "start": "tsx src/api/app.ts",
+        "dev": "tsx watch src/api/app.ts"
     },
     "dependencies": {
         "a2a-coordination": "*",
