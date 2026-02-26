@@ -17,6 +17,7 @@ class VerificationResult(BaseModel):
 
 class ActionAuthorizationRequest(BaseModel):
     agent_id: str
+    action_id: str
     action_type: str
     payload: Dict[str, Any] = Field(default_factory=dict)
 

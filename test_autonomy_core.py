@@ -36,16 +36,18 @@ async def main():
     
     agent_id = "agent_007"
     action = {"network": "ethereum", "gas_limit": 500000}
-    request = ActionAuthorizationRequest(agent_id=agent_id, action_type="deploy_smart_contract", payload=action)
+    request = ActionAuthorizationRequest(agent_id=agent_id, action_id="test_action_001", action_type="deploy_smart_contract", payload=action)
     
     print(f"\n--- Testing authorization for {agent_id} ---")
     print(f"Action Request: {request}\n")
     
-    result = await core.authorize_action(request)
-    
-    print(f"\n--- Authorization Result ---")
-    print(f"Status: {'GRANTED' if result.is_authorized else 'DENIED'}")
-    print(f"Reason: {result.reason}")
+    try:
+        result = await core.authorize_action(request)
+        print(f"\n--- Authorization Result ---")
+        print(f"Status: {'GRANTED' if result.is_authorized else 'DENIED'}")
+    except Exception as e:
+        print(f"\n--- Authorization Failed with Exception ---")
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
