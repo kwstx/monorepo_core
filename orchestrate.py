@@ -17,16 +17,21 @@ def start_python_service(path, port):
         text=True
     )
 
-def start_ts_service(path, command):
+def start_ts_service(path, command, port=None):
     """Starts a TypeScript service using npm."""
-    logger.info(f"Starting TypeScript service at {path} with command '{command}'...")
+    env = os.environ.copy()
+    if port:
+        env["PORT"] = str(port)
+    
+    logger.info(f"Starting TypeScript service at {path} with command '{command}' on port {port}...")
     return subprocess.Popen(
         ["npm", "run", command],
         cwd=os.path.abspath(path),
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
+        env=env
     )
 
 def main():
@@ -39,8 +44,11 @@ def main():
         # Note: simulation_layer and task_formation APIs would be started similarly
         
         # TypeScript Services (Express/Node)
-        services.append(start_ts_service("a2a_coordination", "start"))
-        services.append(start_ts_service("economic_autonomy", "start:api"))
+        # Port assignments to avoid conflicts:
+        # 3000: Economic Autonomy (Expected by health test)
+        # 3001: A2A Coordination
+        services.append(start_ts_service("a2a_coordination", "start", port=3001))
+        services.append(start_ts_service("economic_autonomy", "start:api", port=3000))
         
         logger.info("All services are starting up. Press Ctrl+C to shut down.")
         

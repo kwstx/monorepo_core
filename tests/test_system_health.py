@@ -20,7 +20,7 @@ class TestSystemHealth(unittest.TestCase):
             preexec_fn=os.setsid if os.name != 'nt' else None
         )
         # Give services time to boot
-        time.sleep(10)
+        time.sleep(20)
 
     @classmethod
     def tearDownClass(cls):
