@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import type { PlatformContext } from '../../context/PlatformContext.js';
-import type { ProposedAgentAction } from '../../../PreExecutionBudgetGate.js';
+import type { ProposedAgentAction } from 'economic_autonomy';
 
 export function createBudgetRoutes(context: PlatformContext): Router {
   const router = Router();

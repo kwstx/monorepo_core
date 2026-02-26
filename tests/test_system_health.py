@@ -42,7 +42,7 @@ class TestSystemHealth(unittest.TestCase):
         except Exception as e:
             # If failed, dump logs
             print(f"Error: {e}")
-            for log_file in ["actionable_logic.log", "a2a_coordination.log", "economic_autonomy.log"]:
+            for log_file in ["apps/actionable_logic_service.log", "apps/a2a_coordination_service.log", "apps/economic_autonomy_service.log"]:
                 if os.path.exists(log_file):
                     print(f"\n--- {log_file} ---")
                     with open(log_file, "r") as f:
@@ -60,7 +60,7 @@ class TestSystemHealth(unittest.TestCase):
         except Exception as e:
             # If failed, dump logs
             print(f"Error: {e}")
-            for log_file in ["actionable_logic.log", "a2a_coordination.log", "economic_autonomy.log"]:
+            for log_file in ["apps/actionable_logic_service.log", "apps/a2a_coordination_service.log", "apps/economic_autonomy_service.log"]:
                 if os.path.exists(log_file):
                     print(f"\n--- {log_file} ---")
                     with open(log_file, "r") as f:

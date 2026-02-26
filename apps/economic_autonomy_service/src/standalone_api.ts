@@ -1,14 +1,16 @@
 import express, { type Request, type Response } from 'express';
 import { Logger } from '@shared/logger';
-import type { AgentBudget } from './models/AgentBudget.js';
-import { PnLTracker, type ActionPnLInput } from './PnLTracker.js';
-import { TreasuryEngine } from './TreasuryEngine.js';
-import { PreExecutionBudgetGate, type ProposedAgentAction } from './PreExecutionBudgetGate.js';
+import type { AgentBudget } from 'economic_autonomy';
 import {
+    PnLTracker,
+    type ActionPnLInput,
+    TreasuryEngine,
+    PreExecutionBudgetGate,
+    type ProposedAgentAction,
     BudgetPerformanceVisualizer,
     type AgentBudgetSnapshot,
     type AgentGroupDefinition
-} from './BudgetPerformanceVisualizer.js';
+} from 'economic_autonomy';
 
 const app = express();
 app.use(express.json());

@@ -2,8 +2,7 @@
   "name": "economic_autonomy",
   "version": "1.0.0",
   "description": "Economic Autonomy Domain Logic",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
   "type": "module",
   "scripts": {
     "test": "node --test",

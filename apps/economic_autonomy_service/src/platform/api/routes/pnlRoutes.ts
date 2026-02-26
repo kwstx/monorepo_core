@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import type { PlatformContext } from '../../context/PlatformContext.js';
-import type { ActionPnLInput } from '../../../PnLTracker.js';
+import type { ActionPnLInput } from 'economic_autonomy';
 
 export function createPnlRoutes(context: PlatformContext): Router {
   const router = Router();

@@ -1,8 +1,10 @@
-import { FeedbackIntegrationLayer } from '../../FeedbackIntegrationLayer.js';
-import { DynamicBudgetEngine } from '../../DynamicBudgetEngine.js';
-import { OverrideLearningLayer } from '../../OverrideLearningLayer.js';
-import { PnLTracker } from '../../PnLTracker.js';
-import { TreasuryEngine } from '../../TreasuryEngine.js';
+import {
+  FeedbackIntegrationLayer,
+  DynamicBudgetEngine,
+  OverrideLearningLayer,
+  PnLTracker,
+  TreasuryEngine
+} from 'economic_autonomy';
 import { InMemoryPlatformStore } from '../state/InMemoryPlatformStore.js';
 import { BudgetService } from '../services/BudgetService.js';
 import { PnLService } from '../services/PnLService.js';

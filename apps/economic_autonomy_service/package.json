@@ -11,7 +11,7 @@
     "dependencies": {
         "economic_autonomy": "*",
         "express": "^5.2.1",
-        "@shared/logger": "file:../../shared_utils/typescript"
+        "@shared/logger": "*"
     },
     "devDependencies": {
         "@types/express": "^5.0.6",

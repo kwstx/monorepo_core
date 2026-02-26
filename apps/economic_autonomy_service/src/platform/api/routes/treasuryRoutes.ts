@@ -1,7 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import type { PlatformContext } from '../../context/PlatformContext.js';
-import type { ResourceType } from '../../../models/AgentBudget.js';
-import type { JointProject } from '../../../TreasuryEngine.js';
+import type { ResourceType, JointProject } from 'economic_autonomy';
 
 export function createTreasuryRoutes(context: PlatformContext): Router {
   const router = Router();

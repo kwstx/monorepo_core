@@ -1,9 +1,8 @@
 {
-    "name": "shared-utils",
+    "name": "@shared/logger",
     "version": "1.0.0",
     "description": "Shared project utilities",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "src/index.ts",
     "scripts": {
         "test": "node --test",
         "build": "tsc"
