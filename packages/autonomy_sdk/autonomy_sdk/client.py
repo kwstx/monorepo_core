@@ -1,4 +1,7 @@
 from autonomy_core import AutonomyCore
+from autonomy_core.schemas.models import (
+    AgentRegistrationRequest, ActionAuthorizationRequest, GovernanceProposalRequest
+)
 from typing import Optional, Dict, Any
 
 class AutonomyClient:
@@ -26,30 +29,26 @@ class AutonomyClient:
         )
         self.config = config or {}
 
-    async def authorize(self, agent_id: str, action: Dict[str, Any]) -> bool:
+    async def authorize(self, request: ActionAuthorizationRequest) -> bool:
         """
         Check if an agent is authorized to perform a specific action.
         This triggers a full orchestration of identity, enforcement, economics, scoring, and simulation.
         """
-        return await self._core.authorize_action(agent_id, action)
+        response = await self._core.authorize_action(request)
+        return response.is_authorized
 
-    async def register_agent(self, agent_name: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+    async def register_agent(self, request: AgentRegistrationRequest) -> str:
         """
         Register a new agent in the system.
         Returns the unique agent ID.
         """
-        agent_info = {"name": agent_name, "metadata": metadata or {}}
-        return await self._core.register_agent(agent_info)
+        return await self._core.register_agent(request)
 
-    async def propose_change(self, agent_id: str, change_description: str, target: str) -> bool:
+    async def propose_change(self, request: GovernanceProposalRequest) -> bool:
         """
         Propose a change to the system governance or configuration.
         """
-        change_request = {
-            "description": change_description,
-            "target": target
-        }
-        return await self._core.propose_change(agent_id, change_request)
+        return await self._core.propose_change(request)
 
     def get_system_status(self) -> Dict[str, Any]:
         """

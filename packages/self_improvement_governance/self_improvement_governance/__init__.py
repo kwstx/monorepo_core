@@ -1,5 +1,5 @@
 import logging
-from autonomy_core.interfaces import GovernanceEngine, GovernanceRecord, GovernanceResult, ChangeProposal, ProposalResult
+from autonomy_core.interfaces import GovernanceEngine, GovernanceRecord, GovernanceResult, GovernanceProposalRequest, GovernanceProposalResponse
 
 class GovernanceModule(GovernanceEngine):
     """Python bridge for Governance Node.js backend."""
@@ -10,6 +10,6 @@ class GovernanceModule(GovernanceEngine):
         self.logger.info(f"Recording systemic action for adaptive governance loop.")
         return GovernanceResult(recorded=True, record_id="rec_1")
 
-    async def submit_proposal(self, agent_id: str, proposal: ChangeProposal) -> ProposalResult:
-        self.logger.info(f"Submitting proposal from {agent_id} to governance loop.")
-        return ProposalResult(accepted=True, proposal_id="prop_1")
+    async def submit_proposal(self, request: GovernanceProposalRequest) -> GovernanceProposalResponse:
+        self.logger.info(f"Submitting proposal from {request.proposer_id} to governance loop.")
+        return GovernanceProposalResponse(accepted=True, proposal_id="prop_1")

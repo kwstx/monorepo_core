@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from autonomy_core import AutonomyCore
+from autonomy_core.schemas.models import (
+    AgentRegistrationRequest, ActionAuthorizationRequest
+)
 
 app = FastAPI(
     title="Autonomy Server",
@@ -28,33 +30,24 @@ core = AutonomyCore(
     governance=GovernanceModule()
 )
 
-class AuthRequest(BaseModel):
-    agent_id: str
-    action: Dict[str, Any]
-
-class RegisterRequest(BaseModel):
-    name: str
-    metadata: Optional[Dict[str, Any]] = None
-
 @app.post("/authorize")
-async def authorize(request: AuthRequest):
+async def authorize(request: ActionAuthorizationRequest):
     """
     Authorizes an action for a specific agent by orchestrating via AutonomyCore.
     """
     try:
-        is_authorized = await core.authorize_action(request.agent_id, request.action)
-        return {"authorized": is_authorized}
+        response = await core.authorize_action(request)
+        return {"authorized": response.is_authorized, "reason": response.reason}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/register_agent")
-async def register_agent(request: RegisterRequest):
+async def register_agent(request: AgentRegistrationRequest):
     """
     Registers a new agent in the system using AutonomyCore.
     """
     try:
-        agent_info = {"name": request.name, "metadata": request.metadata or {}}
-        agent_id = await core.register_agent(agent_info)
+        agent_id = await core.register_agent(request)
         return {"agent_id": agent_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

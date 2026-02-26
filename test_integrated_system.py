@@ -1,6 +1,7 @@
 import logging
 import json
 from autonomy_sdk.client import AutonomyClient
+from autonomy_core.schemas.models import AgentRegistrationRequest, ActionAuthorizationRequest
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,20 +19,18 @@ async def main():
     print(f"System Status: {status}")
     
     print("\n[Step 2] Registering Test Agent...")
-    agent_id = await client.register_agent(
-        "IntegrationTestAgent",
-        {"role": "validator", "tier": "A"}
-    )
+    reg_req = AgentRegistrationRequest(agent_id="IntegrationTestAgent", attributes={"role": "validator", "tier": "A"})
+    agent_id = await client.register_agent(reg_req)
     print(f"Registered Agent ID: {agent_id}")
     
     print("\n[Step 3] Running Sample Authorization Flow...")
     action = {
-        "type": "execute_defi_trade",
         "pair": "ETH/USDC",
         "amount": 10.5,
         "slippage": 0.01
     }
-    print(f"Action Payload: {json.dumps(action, indent=2)}")
+    auth_req = ActionAuthorizationRequest(agent_id=agent_id, action_type="execute_defi_trade", payload=action)
+    print(f"Action Request: {auth_req}")
     
     # Authorizing the action will trigger:
     # 1. Identity validation
@@ -40,7 +39,7 @@ async def main():
     # 4. Reputation / Score validation
     # 5. Simulation projection
     print("\n[Step 4] Requesting Authorization (Testing Full Stack)...")
-    is_authorized = await client.authorize(agent_id, action)
+    is_authorized = await client.authorize(auth_req)
     
     print("\n==================================================")
     print(f"    AUTHORIZATION RESULT: {'GRANTED' if is_authorized else 'DENIED'}    ")

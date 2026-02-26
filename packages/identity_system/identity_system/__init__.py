@@ -1,5 +1,5 @@
 import logging
-from autonomy_core.interfaces import IdentityProvider, AgentIdentity, VerificationResult, RegistrationResult
+from autonomy_core.interfaces import IdentityProvider, VerificationResult, AgentRegistrationRequest, AgentRegistrationResponse
 
 class IdentitySystem(IdentityProvider):
     """Python bridge for the Identity System Node.js backend."""
@@ -10,6 +10,6 @@ class IdentitySystem(IdentityProvider):
         self.logger.info(f"Verifying identity for {agent_id} via TS implementation.")
         return VerificationResult(is_valid=True)
 
-    async def register(self, agent: AgentIdentity) -> RegistrationResult:
-        self.logger.info(f"Registering {agent.agent_id} via TS implementation.")
-        return RegistrationResult(agent_id=agent.agent_id, success=True)
+    async def register(self, request: AgentRegistrationRequest) -> AgentRegistrationResponse:
+        self.logger.info(f"Registering {request.agent_id} via TS implementation.")
+        return AgentRegistrationResponse(agent_id=request.agent_id, success=True)
