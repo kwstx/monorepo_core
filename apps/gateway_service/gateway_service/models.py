@@ -6,7 +6,7 @@ from typing import Any, Dict, Literal, Optional
 from pydantic import BaseModel, Field
 
 
-GatewayDecision = Literal["APPROVED", "SOFT_BLOCK", "HUMAN_REQUIRED", "DENIED"]
+GatewayDecision = Literal["APPROVED", "SOFT_BLOCK", "HUMAN_REQUIRED", "DENIED", "QUEUED", "BLOCKED"]
 ApprovalStatus = Literal["PENDING_APPROVAL", "APPROVED", "REJECTED"]
 AdminVerdict = Literal["APPROVE", "REJECT"]
 
