@@ -24,6 +24,7 @@ class ActionAuthorizationRequest(BaseModel):
 class ActionAuthorizationResponse(BaseModel):
     is_authorized: bool
     reason: Optional[str] = None
+    risk_score: Optional[float] = None
 
 class GovernanceProposalRequest(BaseModel):
     proposer_id: str

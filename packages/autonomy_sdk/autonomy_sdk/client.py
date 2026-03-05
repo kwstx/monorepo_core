@@ -164,6 +164,76 @@ class AutonomyClient:
         """
         return asyncio.run(self.authorize(agent_id, action_id, action_type, payload))
 
+    async def authorize_action(
+        self,
+        agent_id: str,
+        action_id: str,
+        action_type: str,
+        payload: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Check if an agent is authorized to perform a specific action and return full details.
+        This provides access to 'risk_score' and other payload metadata from the safety loop.
+        """
+        payload = payload or {}
+        req_obj = ActionAuthorizationRequest(
+            agent_id=agent_id,
+            action_id=action_id,
+            action_type=action_type,
+            payload=payload
+        )
+
+        from event_bus import EventBus, EventTopic, EventMessage
+        import asyncio
+        import uuid
+        
+        bus = EventBus()
+        await bus.connect()
+        
+        correlation_id = str(uuid.uuid4())
+        
+        future = asyncio.get_running_loop().create_future()
+        
+        async def on_response(msg: EventMessage):
+            if msg.correlationId == correlation_id:
+                future.set_result(msg.payload)
+
+        await bus.subscribe(EventTopic.SAFETY_LOOP_RESULT, on_response)
+        
+        # Publish the request
+        await bus.publish(
+            EventTopic.ACTION_REQUESTED,
+            payload={
+                "agent_id": agent_id,
+                "action_id": action_id,
+                "action_type": action_type,
+                "payload": payload
+            },
+            correlation_id=correlation_id,
+            sender="autonomy_sdk"
+        )
+        
+        try:
+            # Wait for response with timeout
+            result = await asyncio.wait_for(future, timeout=10.0)
+            return result
+        except asyncio.TimeoutError:
+            raise ActionAuthorizationError("Timeout waiting for safety loop response via event bus")
+        finally:
+            await bus.disconnect()
+
+    def authorize_action_sync(
+        self,
+        agent_id: str,
+        action_id: str,
+        action_type: str,
+        payload: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Synchronous wrapper for authorize_action.
+        """
+        return asyncio.run(self.authorize_action(agent_id, action_id, action_type, payload))
+
     async def register_agent(
         self,
         agent_id: str,

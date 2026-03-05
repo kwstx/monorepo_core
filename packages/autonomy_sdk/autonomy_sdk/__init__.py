@@ -6,6 +6,7 @@ from .exceptions import (
     ClientConnectionError,
     ProposalError
 )
+from .middleware import circuit_breaker, CircuitBreakerException
 
 __all__ = [
     "AutonomyClient",
@@ -13,7 +14,9 @@ __all__ = [
     "AgentRegistrationError",
     "ActionAuthorizationError",
     "ClientConnectionError",
-    "ProposalError"
+    "ProposalError",
+    "circuit_breaker",
+    "CircuitBreakerException"
 ]
 
 __version__ = "0.1.0"
