@@ -1,0 +1,19 @@
+{
+    "name": "@agent-infra/event-bus",
+    "version": "1.0.0",
+    "description": "Shared Event Bus for Agent Infrastructure Monorepo",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "jest"
+    },
+    "dependencies": {
+        "redis": "^4.7.0",
+        "uuid": "^13.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.2.2",
+        "@types/node": "^20.8.2"
+    }
+}

@@ -36,6 +36,7 @@ packages = [
     "autonomy_core",
     "autonomy_sdk",
     "autonomy_server",
+    "gateway_service",
 ]
 
 [tool.setuptools.package-dir]
@@ -52,6 +53,7 @@ packages = [
 "autonomy_core" = "packages/autonomy_core/autonomy_core"
 "autonomy_sdk" = "packages/autonomy_sdk/autonomy_sdk"
 "autonomy_server" = "apps/autonomy_server/autonomy_server"
+"gateway_service" = "apps/gateway_service/gateway_service"
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
