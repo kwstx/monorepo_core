@@ -11,6 +11,14 @@ def start_python_service(path, port):
     logger.info(f"Starting Python service at {path} on port {port}...")
     log_file = open(f"{path}.log", "w")
     env = os.environ.copy()
+    project_root = os.path.abspath(".")
+    packages_dir = os.path.join(project_root, "packages")
+    python_path = [project_root, packages_dir]
+    # Add each package subdir to PYTHONPATH
+    for pkg in os.listdir(packages_dir):
+        python_path.append(os.path.join(packages_dir, pkg))
+    
+    env["PYTHONPATH"] = os.pathsep.join(python_path)
     cmd = f"{sys.executable} -m uvicorn src.main:app --port {port} --host 127.0.0.1"
     return subprocess.Popen(
         cmd,
@@ -66,12 +74,26 @@ def main():
         # We start it as a direct module run
         logger.info("Starting Simulation Layer Subscriber (Python)...")
         log_f6 = open("packages/simulation_layer/subscriber.log", "w")
+        
+        # Reuse env setup logic
+        project_root = os.path.abspath(".")
+        packages_dir = os.path.join(project_root, "packages")
+        python_path = [project_root, packages_dir]
+        for pkg in os.listdir(packages_dir):
+            python_path.append(os.path.join(packages_dir, pkg))
+        # Ensure event-bus specifically is in path for imports
+        python_path.append(os.path.join(packages_dir, "event-bus"))
+        
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(python_path)
+
         p6 = subprocess.Popen(
             [sys.executable, "-m", "simulation_layer.subscriber"],
             cwd=os.path.abspath("packages/simulation_layer"),
             stdout=log_f6,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=env
         )
         services.append(p6)
         log_files.append(log_f6)

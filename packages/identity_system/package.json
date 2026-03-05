@@ -6,15 +6,18 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "node --test",
-    "build": "tsc"
+    "build": "tsc",
+    "start:subscriber": "tsx src/subscriber.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/uuid": "^10.0.0",
     "ts-node": "^10.9.0",
-    "typescript": "^5.0.0"
+    "typescript": "5.0.0",
+    "tsx": "^4.19.2"
   },
   "dependencies": {
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "@agent-infra/event-bus": "file:../event-bus"
   }
 }

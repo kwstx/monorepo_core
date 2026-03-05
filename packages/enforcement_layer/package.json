@@ -6,12 +6,16 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "node --test",
-    "build": "tsc"
+    "build": "tsc",
+    "start:subscriber": "tsx src/service.ts"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "tsx": "^4.19.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@agent-infra/event-bus": "file:../event-bus"
+  }
 }

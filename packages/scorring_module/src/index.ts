@@ -1,4 +1,5 @@
 export * from './RiskScoringEngine.js';
+export * from './PrometheusExporter.js';
 export * from './ClassificationEngine.js';
 export * from './DecisionEvaluationFramework.js';
 export * from './DecisionObject.js';

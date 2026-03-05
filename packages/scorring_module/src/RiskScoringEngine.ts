@@ -1,4 +1,5 @@
 import type { DecisionObject } from './DecisionObject.js';
+import { ScorringPrometheusExporter } from './PrometheusExporter.js';
 
 export type RiskDimension =
     | 'operationalRisk'
@@ -34,6 +35,11 @@ export interface RiskScoringContext {
      * Higher values proactively increase risk pressure before harm occurs.
      */
     preemptiveRiskLift?: number;
+    /**
+     * Current threshold adaptation anomaly sensitivity multiplier, typically from
+     * ThresholdAdaptationEngine (0.5 to 2.0).
+     */
+    anomalySensitivity?: number;
 }
 
 export interface CooperativeSystemState {
@@ -96,6 +102,8 @@ export interface RiskScoreResult {
  * Weighting is dynamically recalibrated on each call based on context + system state.
  */
 export class RiskScoringEngine {
+    private static readonly metricsExporter = ScorringPrometheusExporter.getInstance();
+
     private readonly baseWeights: Record<RiskDimension, number> = {
         operationalRisk: 1.0,
         regulatoryExposure: 1.0,
@@ -203,6 +211,13 @@ export class RiskScoringEngine {
         const preemptiveRiskPressureDelta = preemptiveRiskLiftApplied * 0.55;
         const riskPressure = this.clamp01(baseRiskPressure + preemptiveRiskPressureDelta);
         const decisionScore = this.clamp01(1 - riskPressure) * 100;
+        const anomalySensitivity = this.clamp(context.anomalySensitivity ?? 1.0, 0.5, 2.0);
+
+        RiskScoringEngine.metricsExporter.observe({
+            decisionScore,
+            riskPressure,
+            anomalySensitivity,
+        });
 
         return {
             decisionScore: Number(decisionScore.toFixed(2)),
