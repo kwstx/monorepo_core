@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "simulation_layer package"
 dependencies = [
     "pydantic>=2.0.0",
-    "autonomy_core"
+    "autonomy_core",
+    "psycopg[binary]>=3.1.0"
 ]
 

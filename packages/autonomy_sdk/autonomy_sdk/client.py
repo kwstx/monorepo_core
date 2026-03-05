@@ -108,31 +108,44 @@ class AutonomyClient:
         )
         body_bytes = req_obj.model_dump_json().encode('utf-8')
 
-        if self.server_url:
-            req = urllib.request.Request(
-                f"{self.server_url}/authorize",
-                data=body_bytes,
-                headers=self._request_headers,
-                method="POST"
-            )
-            try:
-                with urllib.request.urlopen(req) as response:
-                    data = json.loads(response.read().decode('utf-8'))
-                    return data.get("authorized", False)
-            except urllib.error.URLError as e:
-                raise ClientConnectionError(f"Error calling remote server: {e}") from e
-            except Exception as e:
-                raise ActionAuthorizationError(f"Unexpected error calling authorization server: {e}") from e
-        else:
-            if not self._core:
-                raise AutonomySDKError("Core Engine is not initialized locally.")
-            try:
-                response = await self._core.authorize_action(req_obj)
-                return response.is_authorized
-            except AutonomyException as e:
-                raise ActionAuthorizationError(f"Authorization denied or failed internally: {str(e)}") from e
-            except Exception as e:
-                raise ActionAuthorizationError(f"Unexpected internal authorization error: {str(e)}") from e
+        from event_bus import EventBus, EventTopic, EventMessage
+        import asyncio
+        
+        bus = EventBus()
+        await bus.connect()
+        
+        correlation_id = str(uuid.uuid4())
+        
+        # We need a way to wait for the response event
+        future = asyncio.get_running_loop().create_future()
+        
+        async def on_response(msg: EventMessage):
+            if msg.correlationId == correlation_id:
+                future.set_result(msg.payload.get("status") == "APPROVED")
+
+        await bus.subscribe(EventTopic.SAFETY_LOOP_RESULT, on_response)
+        
+        # Publish the request
+        await bus.publish(
+            EventTopic.ACTION_REQUESTED,
+            payload={
+                "agent_id": agent_id,
+                "action_id": action_id,
+                "action_type": action_type,
+                "payload": payload
+            },
+            correlation_id=correlation_id,
+            sender="autonomy_sdk"
+        )
+        
+        try:
+            # Wait for response with timeout
+            result = await asyncio.wait_for(future, timeout=10.0)
+            return result
+        except asyncio.TimeoutError:
+            raise ActionAuthorizationError("Timeout waiting for safety loop response via event bus")
+        finally:
+            await bus.disconnect()
 
     def authorize_sync(
         self,

@@ -51,23 +51,32 @@ def main():
     services = []
     log_files = []
     try:
-        # Python Services (FastAPI)
-        p1, f1 = start_python_service("apps/actionable_logic_service", 8000)
-        services.append(p1)
-        log_files.append(f1)
-        
-        # TypeScript Services (Express/Node)
-        # Port assignments to avoid conflicts:
-        # 3000: Economic Autonomy (Expected by health test)
-        # 3001: A2A Coordination
-        p2, f2 = start_ts_service("apps/a2a_coordination_service", "start", port=3001)
-        services.append(p2)
-        log_files.append(f2)
-        
-        p3, f3 = start_ts_service("apps/economic_autonomy_service", "start", port=3000)
-        services.append(p3)
-        log_files.append(f3)
-        
+        # --- New Event-Driven Service Mesh ---
+        # Identity System Subscriber (TS)
+        p4, f4 = start_ts_service("packages/identity_system", "start:subscriber")
+        services.append(p4)
+        log_files.append(f4)
+
+        # Enforcement Layer Subscriber (TS)
+        p5, f5 = start_ts_service("packages/enforcement_layer", "start:subscriber")
+        services.append(p5)
+        log_files.append(f5)
+
+        # Simulation Layer Subscriber (Python)
+        # We start it as a direct module run
+        logger.info("Starting Simulation Layer Subscriber (Python)...")
+        log_f6 = open("packages/simulation_layer/subscriber.log", "w")
+        p6 = subprocess.Popen(
+            [sys.executable, "-m", "simulation_layer.subscriber"],
+            cwd=os.path.abspath("packages/simulation_layer"),
+            stdout=log_f6,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+        services.append(p6)
+        log_files.append(log_f6)
+
+        logger.info("Event-driven Safety Loop Active (Identity -> Enforcement -> Simulation)")
         logger.info("All services are starting up. Press Ctrl+C to shut down.")
         
         while True:

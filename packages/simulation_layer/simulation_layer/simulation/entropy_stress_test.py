@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import os
 from statistics import mean
 from typing import List, Sequence
 
@@ -8,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot
 from simulation_layer.models.policy import PolicySchema, TransformationOperator
+from simulation_layer.simulation.state_ingestor import StateIngestor
 
 
 class EntropyCycleMetrics(BaseModel):
@@ -40,6 +42,9 @@ class EntropyStressTest:
     1) influence concentration amplification
     2) cooperative diversity fragmentation
     """
+
+    def __init__(self, state_ingestor: StateIngestor | None = None) -> None:
+        self._state_ingestor = state_ingestor
 
     def evaluate(
         self,
@@ -160,20 +165,43 @@ class EntropyStressTest:
         return [max(0.0, float(v)) / total for v in values]
 
     def _initial_distribution(self, snapshot: CooperativeStateSnapshot) -> List[float]:
-        if snapshot.trust_vectors:
+        live_snapshot = self._resolve_snapshot(snapshot)
+
+        if live_snapshot.trust_vectors:
             values = [
                 mean(vector.values) if vector.values else 0.0
-                for vector in snapshot.trust_vectors
+                for vector in live_snapshot.trust_vectors
             ]
             return self._normalize(values)
 
-        if snapshot.entropy_concentration_levels:
-            # Higher concentration levels imply larger initial influence share.
-            concentrations = [max(0.0, level.value) for level in snapshot.entropy_concentration_levels]
+        if live_snapshot.entropy_concentration_levels:
+            concentrations = [
+                max(0.0, level.value)
+                for level in live_snapshot.entropy_concentration_levels
+            ]
             return self._normalize(concentrations)
 
-        # Fallback for sparse snapshots.
-        return [0.25, 0.25, 0.25, 0.25]
+        raise ValueError(
+            "No trust vectors or entropy concentration levels available to initialize entropy distribution."
+        )
+
+    def _resolve_snapshot(self, snapshot: CooperativeStateSnapshot) -> CooperativeStateSnapshot:
+        if snapshot.trust_vectors:
+            return snapshot
+        if snapshot.entropy_concentration_levels:
+            return snapshot
+
+        ingestor = self._state_ingestor
+        if ingestor is None and (os.getenv("SIMULATION_DB_DSN") or os.getenv("DATABASE_URL")):
+            ingestor = StateIngestor()
+        if ingestor is None:
+            raise ValueError(
+                "Sparse baseline snapshot provided and no StateIngestor configured for live data ingestion."
+            )
+        return ingestor.load_current_state(
+            simulation_id=snapshot.simulation_id,
+            capture_step=snapshot.capture_step,
+        )
 
     def _policy_pressures(self, policy: PolicySchema) -> tuple[float, float]:
         concentration = 0.0

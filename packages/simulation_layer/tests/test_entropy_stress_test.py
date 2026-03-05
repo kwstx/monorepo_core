@@ -121,3 +121,38 @@ def test_detects_fragmentation_risk_with_divergence_policy():
     assert report.fragmentation_risk_detected is True
     assert report.fragmentation_risk_score >= 0.12
     assert any(point.churn > 0.03 for point in report.trajectory[1:])
+
+
+def test_sparse_snapshot_ingests_live_state():
+    class StubStateIngestor:
+        def load_current_state(self, simulation_id: str, capture_step: int) -> CooperativeStateSnapshot:
+            return CooperativeStateSnapshot(
+                simulation_id=simulation_id,
+                capture_step=capture_step,
+                trust_vectors=(
+                    {"entity_id": "live-a", "values": (0.90,)},
+                    {"entity_id": "live-b", "values": (0.10,)},
+                ),
+            )
+
+    policy = PolicySchema(**_base_policy())
+    sparse = CooperativeStateSnapshot(simulation_id="sim-live", capture_step=0)
+
+    report = EntropyStressTest(state_ingestor=StubStateIngestor()).evaluate(
+        policy,
+        sparse,
+        cycles=1,
+    )
+
+    assert report.trajectory[0].dominance_share > 0.80
+
+
+def test_sparse_snapshot_without_ingestor_raises():
+    policy = PolicySchema(**_base_policy())
+    sparse = CooperativeStateSnapshot(simulation_id="sim-sparse", capture_step=0)
+
+    try:
+        EntropyStressTest().evaluate(policy, sparse, cycles=1)
+        assert False, "Expected ValueError for sparse snapshot with no live ingestor."
+    except ValueError as exc:
+        assert "StateIngestor" in str(exc)
