@@ -238,7 +238,5 @@ if __name__ == "__main__":
         # Just run the import check (which happened at top level)
         print("Import test passed.")
     else:
-        # Run the server normally (blocked by standard MCP protocol)
-        # For now, we'll just print that it's ready.
-        print("MCP Server initialized and ready for communication.")
-        # To actually run, use: asyncio.run(main())
+        # Run the server normally using standard I/O transport
+        asyncio.run(main())
