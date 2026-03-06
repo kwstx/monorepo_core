@@ -9,6 +9,9 @@ from typing import Any, Optional
 from fastapi import Depends, FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
+from shared_utils.metrics import PrometheusExporter
+
+exporter = PrometheusExporter()
 
 from autonomy_core import AutonomyConfig, AutonomyContainer, AutonomyCore
 from autonomy_core.exceptions import (
@@ -63,6 +66,7 @@ async def lifespan(app: FastAPI):
     container = AutonomyContainer(AutonomyConfig())
     app.state.container = container
     app.state.core = container.build_core()
+    exporter.start_server(8003)
     logger.info("autonomy_server_started", extra={"event": "startup"})
     yield
     logger.info("autonomy_server_stopped", extra={"event": "shutdown"})
@@ -132,7 +136,14 @@ def create_app() -> FastAPI:
         api_version: str,
         core: AutonomyCore,
     ) -> dict[str, Any]:
+        start_time = time.time()
         result = await core.authorize_action(request_model)
+        latency = time.time() - start_time
+        exporter.observe_simulation_latency(latency)
+        
+        if not result.is_authorized:
+            exporter.increment_blocked_action()
+            
         return {
             "authorized": result.is_authorized,
             "reason": result.reason,

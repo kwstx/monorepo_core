@@ -16,7 +16,9 @@ from simulation_layer.models.policy import PolicySchema, ScopeBoundaries, Tempor
 from simulation_layer.models.cooperative_state_snapshot import CooperativeStateSnapshot, TrustVector
 
 from .models import ActionRequest, ActionResponse
+from shared_utils.metrics import PrometheusExporter
 
+exporter = PrometheusExporter()
 
 SAFETY_TIMEOUT_SECONDS = 0.5
 TIMEOUT_REASON = "Safety check timed out after 500ms"
@@ -75,13 +77,19 @@ class RequestQueueer:
             )
             
             # Run the full entropy_stress_test on the combined impact
+            start_time = time.time()
             report = self.entropy_tester.evaluate(policy, snapshot)
+            latency = time.time() - start_time
+            exporter.observe_simulation_latency(latency)
+            
             cumulative_system_risk = report.dominance_amplification_score + report.fragmentation_risk_score
+            exporter.record_risk_pressure(cumulative_system_risk)
             
             if cumulative_system_risk > CUMULATIVE_SAFETY_THRESHOLD:
                 # If adding this request breached the threshold, block the current request
                 # and remove it from the queue
                 self.queue.pop()
+                exporter.increment_blocked_action()
                 return {"decision": "BLOCKED", "reason": "Cumulative system risk exceeds safety threshold", "impact_score": cumulative_system_risk}
             else:
                 return {"decision": "QUEUED", "reason": "Action queued and passed stress test", "impact_score": cumulative_system_risk}
@@ -93,8 +101,8 @@ async def lifespan(app: FastAPI):
     app.state.identity = IdentitySystem()
     app.state.enforcement = EnforcementLayer()
     app.state.simulation = SimulationLayer()
+    exporter.start_server(8000)
     yield
-
 
 def create_app() -> FastAPI:
     app = FastAPI(

@@ -7,6 +7,10 @@ from actionable_logic.version_control.engine import VersionControlEngine
 from actionable_logic.enforcement.engine import PolicyEnforcer
 from actionable_logic.enforcement.guardrails import AdaptiveGuardrailsEngine
 from src.models import SimulationRequest, SimulationResponse, ActionCheckRequest, ComplianceTrace
+from shared_utils.metrics import PrometheusExporter
+import time
+
+exporter = PrometheusExporter()
 
 app = FastAPI(
     title="PolicyAPI",
@@ -89,8 +93,11 @@ async def simulate_policy_change(request: SimulationRequest):
     Simulates a hypothetical policy change against a provided system state.
     Provides structured logic evaluation and causal explanations.
     """
+    start_time = time.time()
     enforcer = PolicyEnforcer([request.policy])
     results = enforcer.evaluate(request.test_state, request.context)
+    latency = time.time() - start_time
+    exporter.observe_simulation_latency(latency)
     
     if not results:
          raise HTTPException(status_code=500, detail="Simulation failed to produce results.")
@@ -144,11 +151,26 @@ async def check_agent_action(request: ActionCheckRequest):
             for p in all_policies:
                 guardrails.apply_policy_update(p)
 
+        start_time = time.time()
         response = guardrails.monitor_action(request.agent_id, request.action)
+        latency = time.time() - start_time
+        exporter.observe_simulation_latency(latency)
+        
+        # Estimate risk pressure from guardrails monitoring
+        if hasattr(response, 'metadata') and response.metadata and 'risk_score' in response.metadata:
+            exporter.record_risk_pressure(response.metadata['risk_score'])
+        elif hasattr(response, 'score'):
+            # If structure has score directly
+            exporter.record_risk_pressure(response.score)
+            
+        if not getattr(response, 'is_allowed', True) or getattr(response, 'action', '') == "BLOCK":
+            exporter.increment_blocked_action()
+
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
+    exporter.start_server(8002)
     uvicorn.run(app, host="0.0.0.0", port=8000)
