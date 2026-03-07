@@ -1,108 +1,114 @@
-# Autonomy Gateway: Security Middleware for AI Agents
+# Autonomy Gateway: Full-Stack Infrastructure for AI Agent Execution
 
-Autonomy Gateway is a toolkit that prevents AI agents from making unauthorized or destructive mistakes. It sits between your AI models and your sensitive systems (like bank accounts, databases, or cloud servers). 
+The Autonomy Gateway is a complete infrastructure for deploying, coordinating, and securing AI agents. Most AI tools provide the "thinking" (the LLM); this project provides the **execution layer** that allows agents to take actions in the real world safely and legally.
 
-When an AI tries to do something, the Gateway checks it against your rules, runs a test-run (simulation), and checks the cost. If anything is wrong, the Gateway physically kills the process before any damage is done.
+It is a modular monorepo containing everything needed to move agents from simple "chat" interfaces to production-ready "autonomous services."
 
-[Getting Started Guide](file:///c:/Users/galan/agent-infra-monorepo/AUTONOMY_DOCS_VALID.md) · [Enforcement Rules](file:///c:/Users/galan/agent-infra-monorepo/ENFORCEMENT_GUIDE.md) · [Monitoring Setup](file:///c:/Users/galan/agent-infra-monorepo/MONITORING_DOCS_GUIDE.md) · [MCP Tool Server](file:///c:/Users/galan/agent-infra-monorepo/MCP_DOCUMENTATION_GUIDE.md)
+[Technical Roadmap](file:///c:/Users/galan/agent-infra-monorepo/prompts_to_build_the_hands.md) · [Technical Implementation Docs](file:///c:/Users/galan/agent-infra-monorepo/AUTONOMY_DOCS_VALID.md) · [Enforcement Guide](file:///c:/Users/galan/agent-infra-monorepo/ENFORCEMENT_GUIDE.md) · [Monitoring Setup](file:///c:/Users/galan/agent-infra-monorepo/MONITORING_DOCS_GUIDE.md) · [MCP Tool Server](file:///c:/Users/galan/agent-infra-monorepo/MCP_DOCUMENTATION_GUIDE.md)
 
 ---
 
 ## Quick Start
 
 ### 1. Install via Pip
-Install in editable mode so changes to the monorepo are reflected immediately.
+Install in editable mode so changes to the monorepo are reflected immediately across all packages.
 ```bash
 pip install -e .
 ```
 
-### 2. Protect a Python Function
-Use the `@circuit_breaker` tool to add a security check to any sensitive code.
+### 2. Add an Execution Guard to your Python Code
+The `@circuit_breaker` middleware pauses your code and runs a 500ms safety check through the Gateway before allowing sensitive operations to proceed.
 ```python
 from autonomy_sdk import AutonomyClient
 from autonomy_sdk.middleware import circuit_breaker
 
 client = AutonomyClient()
 
-# Set a threshold (0.0 to 1.0). If the check is too risky, the function is blocked.
+# Set a safety threshold. If the action is too risky, the function is blocked.
 @circuit_breaker(client, threshold=0.15)
-async def delete_database_entry(item_id: str):
-    # This code only runs if the Gateway says it is safe.
-    db.delete(item_id)
+async def perform_payment(amount: float, recipient: str):
+    # This code only runs if the Gateway verifies it is safe and within budget.
+    print(f"Executing transfer: {amount} to {recipient}")
 ```
 
 ### 3. Launch the Monitoring Stack
-Start the real-time dashboard to see exactly what your agents are doing.
+Start the real-time observability dashboards to watch agent behavior "live."
 ```bash
 docker-compose -f docker-compose.monitoring.yml up -d
 ```
-Access the dashboard at `http://localhost:3000` (User: `admin`, Pass: `admin`).
+Dashboard: `http://localhost:3000` (User: `admin`, Pass: `admin`).
 
 ---
 
-## Everything Built So Far
+## Detailed Feature Inventory (The Monorepo)
 
-The platform is divided into specialized packages that handle different parts of the safety process.
+The platform is designed as an "Operating System" for agents, with specialized modules for every stage of the agent lifecycle.
 
-### Core Systems
-*   **autonomy_core**: The main engine that coordinates all safety modules.
-*   **autonomy_sdk**: The library you use in your Python scripts to connect to the Gateway.
-*   **gateway_service**: A FastAPI-based server that acts as a central firewall for multiple agents.
-*   **identity_system**: Keeps a registry of all agents and uses cryptographic keys to verify who is making each request.
+### 1. Core Platform & SDK
+*   **autonomy_core**: The central coordination kernel that handles the internal routing of all safety checks.
+*   **autonomy_sdk**: The primary developer library. It includes the `AutonomyClient` and the middleware used to "wrap" your existing code.
+*   **gateway_service**: A high-performance FastAPI server that acts as a centralized firewall for multi-agent swarms.
+*   **identity_system**: Each agent gets a cryptographically verified ID. This module manages agent registration, role-based permissions, and trust tokens.
 
-### Control and Enforcement
-*   **enforcement_layer**: A rules-engine that compares an agent's intended action against a list of "Allow" and "Deny" policies.
-*   **actionable_logic**: A parser that lets you write rules in plain text or JSON and turns them into code-level filters.
-*   **scorring_module**: Calculates a "Risk Score" (0 to 100) for every action based on how unusual it looks compared to normal behavior.
+### 2. Runtime Enforcement (The "Brakes")
+*   **enforcement_layer**: A deterministic engine that checks every agent command against non-negotiable business rules before letting it run.
+*   **actionable_logic**: A universal parser that allows you to write legal or safety policies in plain English or JSON and automatically translates them into machine-enforceable code.
+*   **scorring_module**: Analyzes agent behavior (like action frequency or API call types) to calculate a "Risk Score" (0 to 100) using 10+ anomaly detection vectors.
 
-### Testing and Forecasting
-*   **simulation_layer**: Creates a "shadow" copy of your system state to run an agent's command as a test-run before letting it happen for real.
-*   **entropy_stress_testing**: Checks if a group of agents working at the same time might cause a system-wide failure or large-scale risk spike.
-*   **main_dashboard**: A pre-built Grafana setup with panels for Risk Pressure, Block Rates, and System Health.
+### 3. Economic Autonomy & Commerce
+*   **economic_autonomy**: A hard-coded budgeting engine. It sets P&L limits, transaction caps, and spend boundaries that an agent physically cannot bypass.
+*   **a2a_coordination**: A protocol for Agent-to-Agent business. It allows agents to negotiate terms, create digital contracts, and settle payments with each other automatically.
+*   **reputation_tracker**: A system that scores agents based on how successfully they coordinate with others and how often they follow the rules.
 
-### Money and Coordination
-*   **economic_autonomy**: A budgeting tool that sets hard limits on how much an agent can spend. It tracks P&L and stops all actions if a budget is exceeded.
-*   **a2a_coordination**: A set of protocols that allows agents to negotiate with each other, sign "digital contracts," and settle payments.
-*   **reputation_tracker**: Scores agents based on their success rate and how often they follow coordination rules.
+### 4. Team Dynamics & Logistics
+*   **task_formation**: A recursive optimizer that analyzes a complex task and determines the perfect combination of agents needed to solve it.
+*   **matching_engine**: Automatically assigns incoming requests to the best available agent based on its skills, safety history, and current workload.
+*   **synergy_forecaster**: A simulator that predicts how well a specific group of agents will perform together *before* they are assigned a real-world project.
 
-### Logistics and Teams
-*   **task_formation**: An optimizer that analyzes a task and picks the best combination of agents to solve it.
-*   **matching_engine**: Automatically routes incoming requests to the best available agent based on its skills and safety history.
-*   **synergy_forecaster**: Predicts how well a team of agents will work together before they are assigned to a real project.
+### 5. Prediction & Simulation (The "Foresight")
+*   **simulation_layer**: A tool that creates a "shadow" copy of your system state. It runs every agent command as a test-run and analyzes the outcome before the command is allowed in production.
+*   **entropy_stress_testing**: Analyzes the "Cumulative Risk" of many agents working at once. It can block a perfectly safe agent if it determines that the *combination* of its work with others would destabilize the system.
+*   **observability_dashboards**: Pre-built Grafana panels for monitoring "Risk Pressure," "Brake Sensitivity," and "Blocked Actions" in real-time.
 
----
-
-## How it Works: The Security Loop
-
-When an agent wants to perform an action, the Gateway runs a four-step check in under 500 milliseconds:
-
-1.  **Identity Check**: "Is this a registered agent we recognize?"
-2.  **Policy Check**: "Is this specific action (e.g., 'delete_user') allowed by the rules?"
-3.  **Money Check**: "Does this agent have enough remaining budget to pay for this?"
-4.  **Test Run (Simulation)**: "If we do this in the test environment, does anything break?"
-
-If any of these checks fail, the Gateway returns a **BLOCKED** status and the code stops immediately.
+### 6. Governance & Self-Evolution
+*   **self_improvement_governance**: A framework for agents to propose, test, and deploy code or policy updates to themselves. It includes a democratic consensus loop where changes must be "voted" on and verified.
+*   **rollback_engine**: Automatically reverts any system or code update if the simulation layer detects a spike in risk after the change.
+*   **MCP Guard Server**: Full implementation of the Model Context Protocol. It exposes the Gateway's safety checks as "tools" for AI assistants like Claude, GPT, or Antigravity.
 
 ---
 
-## Advanced Operations
+## How It Works: The 500ms Sovereign Check
+
+Every time an agent tries to perform a "Write" or "Execute" action, the Gateway performs the following sequence:
+
+1.  **Identity**: "Is this registered agent allowed to be active in this specific workspace?"
+2.  **Policy**: "Does the `action_type` (e.g., 'delete_server') violate any written business policies?"
+3.  **Economics**: "Does the agent have enough remaining budget for this action's cost?"
+4.  **Simulation**: "When we ran this in the 'shadow sandbox', did it cause a risk spike or system failure?"
+
+**Decision:**
+*   **SUCCESS**: All checks pass. The Gateway permits the code to run.
+*   **FAILURE**: Any check fails. The Gateway kills the process and logs a `SecurityViolation` event.
+
+---
+
+## Advanced Management
 
 ### Stress Testing (Chaos Agents)
-You can test the system's "Brakes" by running a simulation of multiple agents trying to break the rules at once:
+Verify your "Brakes" by running a simulation of 10 "Chaos Agents" attempting to overspend and break policies simultaneously:
 ```bash
-python test_chaos.py
+python test_chaos.py --agents 10 --stress-target budget
 ```
-This script spawns 10 agents that intentionally attempt to overspend. The Gateway should successfully block them once the cumulative risk threshold is hit.
+The Gateway should successfully queue and block these agents as the **Cumulative System Risk** threshold is reached.
 
-### Remote Access (Tailscale)
-The Gateway can be configured to use **Tailscale** for secure remote access. This allows your agents to run on a central server while you monitor them from your laptop securely over an encrypted tunnel.
-
-### MCP Integration
-Use the **autonomy-guard-server** (apps/mcp_server) to add these safety features to AI assistants like Claude. It exposes the Gateway's checks as a tool that the AI can use to self-verify its actions.
+### Remote Gateway Deployment
+You can run the Gateway on a centralized Linux server while your agents run on many different Edge devices or laptops.
+*   Use **Tailscale** for secure remote access over an encrypted tunnel.
+*   Monitor everything through a single **Grafana** instance connected to the central Gateway.
 
 ---
 
 ## Security Model
-*   **Default-Deny**: The system blocks every action by default. You must explicitly write a policy to allow something.
-*   **Docker Sandboxing**: When running in a multi-user environment, the Gateway can run agent code inside temporary Docker containers to prevent it from accessing your local files.
-*   **Correlation IDs**: Every action is assigned a unique tracking ID so you can trace a "Blocked" decision back through the logs to see exactly why it was stopped.
+*   **Default-Deny**: The system blocks every action by default. You must explicitly write a policy to allow a specific agent to do a specific thing.
+*   **Docker Isolation**: For multi-user environments, the Gateway can run agent commands inside per-session Docker sandboxes to keep the rest of your files safe.
+*   **Audit Trail**: Every request is assigned a `correlationId`. This ID is tracked through the simulation, the enforcement check, and the final decision, providing a complete audit log for regulators.
