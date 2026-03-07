@@ -1,174 +1,108 @@
-# 🛡️ Autonomy Gateway — The Sovereign Layer for AI
-**THE NON-NEGOTIABLE BRAKES FOR AUTONOMOUS AGENTS.**
+# Autonomy Gateway: Security Middleware for AI Agents
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/autonomy-infra/monorepo_core)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Safety](https://img.shields.io/badge/safety-hardened-red.svg)]()
-[![Stack](https://img.shields.io/badge/stack-Python%20|%20Node-yellow.svg)]()
+Autonomy Gateway is a toolkit that prevents AI agents from making unauthorized or destructive mistakes. It sits between your AI models and your sensitive systems (like bank accounts, databases, or cloud servers). 
 
-The **Autonomy Gateway** is the first integrated Operating System for the Machine Economy. It provides the single, unified control plane required to give AI agents "Write Access" and "Financial Autonomy" without human anxiety. 
+When an AI tries to do something, the Gateway checks it against your rules, runs a test-run (simulation), and checks the cost. If anything is wrong, the Gateway physically kills the process before any damage is done.
 
-While others build the *brains* (LLMs), we build the **Brakes, the Dashboard, and the Constitution.** The Gateway is the mandatory bridge between an agentic thought and a real-world action. If a command doesn't pass the Gateway, it is physically unable to execute.
-
-[Website]() · [Docs](file:///c:/Users/galan/agent-infra-monorepo/AUTONOMY_DOCS_VALID.md) · [Enforcement Guide](file:///c:/Users/galan/agent-infra-monorepo/ENFORCEMENT_GUIDE.md) · [Monitoring](file:///c:/Users/galan/agent-infra-monorepo/MONITORING_DOCS_GUIDE.md) · [MCP Guide](file:///c:/Users/galan/agent-infra-monorepo/MCP_DOCUMENTATION_GUIDE.md) · [A2A Coordination](file:///c:/Users/galan/agent-infra-monorepo/packages/a2a_coordination/README.md) · [Task Formation](file:///c:/Users/galan/agent-infra-monorepo/packages/task_formation/README.md)
+[Getting Started Guide](file:///c:/Users/galan/agent-infra-monorepo/AUTONOMY_DOCS_VALID.md) · [Enforcement Rules](file:///c:/Users/galan/agent-infra-monorepo/ENFORCEMENT_GUIDE.md) · [Monitoring Setup](file:///c:/Users/galan/agent-infra-monorepo/MONITORING_DOCS_GUIDE.md) · [MCP Tool Server](file:///c:/Users/galan/agent-infra-monorepo/MCP_DOCUMENTATION_GUIDE.md)
 
 ---
 
-## 🚀 Quick Start (TL;DR)
+## Quick Start
 
-**1. Install the SDK**
+### 1. Install via Pip
+Install in editable mode so changes to the monorepo are reflected immediately.
 ```bash
-# Recommended: Install in editable mode from the monorepo root
 pip install -e .
 ```
 
-**2. Protect a Function (Local Mode)**
-The `@circuit_breaker` decorator pauses the function and runs it through the Safety Brain.
+### 2. Protect a Python Function
+Use the `@circuit_breaker` tool to add a security check to any sensitive code.
 ```python
 from autonomy_sdk import AutonomyClient
 from autonomy_sdk.middleware import circuit_breaker
 
 client = AutonomyClient()
 
+# Set a threshold (0.0 to 1.0). If the check is too risky, the function is blocked.
 @circuit_breaker(client, threshold=0.15)
-async def transfer_funds(amount: float, recipient: str):
-    # This code WILL NOT RUN if the risk score exceeds 0.15
-    print(f"Transferring {amount} to {recipient}...")
+async def delete_database_entry(item_id: str):
+    # This code only runs if the Gateway says it is safe.
+    db.delete(item_id)
 ```
 
-**3. Launch the Monitoring Dashboard**
-```powershell
-docker-compose -f docker-compose.monitoring.yml up -d
-# Access at http://localhost:3000 (admin/admin)
-```
-
----
-
-## 🔥 Highlights
-*   **Deterministic Enforcement (The "Hands")** — Move from "reporting risk" to "physically stopping" actions at the bytecode level.
-*   **Economic Guardrails (The "Capital")** — Hard-coded P&L constraints and budget boundaries that machines literally cannot exceed.
-*   **Shadow Simulation (The "Foresight")** — Real-time entropy stress-testing that predicts the impact of agent actions before they hit production.
-*   **Universal Policy Logic (The "Constitution")** — Translate complex human regulations into machine-enforceable filters automatically.
-*   **Self-Evolving Governance** — Systems that upgrade their own logic through a democratic consensus loop with automatic sandboxed rollbacks.
-
----
-
-## 🏗️ Everything we've built so far
-
-### Core Platform
-*   **Autonomy Core**: The central coordination kernel for agent states and loop evaluation.
-*   **Autonomy SDK (`autonomy_sdk`)**: The primary developer entry point. Includes `AutonomyClient` and the Circuit Breaker middleware.
-*   **Gateway Service**: High-performance FastAPI gateway for centralizing agent requests and cumulative risk evaluation.
-*   **Identity System**: Verifiable agent identities, cryptographic registration, and role-based access control.
-
-### Safety & Enforcement
-*   **Enforcement Layer**: Deterministic policy validation engine for checking actions against non-negotiable rules.
-*   **Scoring Module**: Risk pressure calculation using 10+ anomaly vectors.
-*   **Actionable Logic**: Universal policy parser that translates human-readable JSON/Markdown rules into executable filters.
-
-### Risk & Prediction
-*   **Simulation Layer**: A dedicated "Parallel Reality" for testing agent commands.
-*   **Entropy Stress Testing**: Predicts the "System Temperature" surge if a batch of agent actions is allowed to proceed.
-*   **Main Autonomy Dashboard**: Pre-configured Grafana panels for real-time observability.
-
-### Economic Autonomy
-*   **Budgeting Engine**: Hard limits on spend, throughput, and P&L deviation.
-*   **A2A Coordination**: Protocols for agent-to-agent negotiation, contracting, and mutual settlement.
-*   **Reputation Demo**: Tracking agent reliability through successful/failed coordination cycles.
-
-### Intelligence & Logistics
-*   **Task Formation**: Recursive team optimization—automatically grouping agents based on skill complementarity.
-*   **Matching Engine**: Intelligent assignment of incoming requests to the most capable (and safe) agents.
-*   **Synergy Forecasting**: Predicting the success probability of a multi-agent team before they start.
-
-### Governance & Evolution
-*   **Self-Improvement Governance**: A safe loop for agents to propose and test their own code/policy updates.
-*   **MCP Guard Server**: Full Model Context Protocol server exposing `authorize_action` and `register_agent` as tools for AI assistants (Claude/Antigravity).
-*   **Rollback Engine**: Automatic reversion of system config if a governance change causes a risk spike.
-
----
-
-## 🔍 How it Works (Technical Flow)
-
-The Gateway evaluates the "System Temperature" across four vectors in under 500ms:
-
-```text
-    [ AI AGENT THOUGHT ]
-             │
-             ▼
-┌───────────────────────────────┐
-│       AUTONOMY GATEWAY        │
-│       (control plane)         │
-└──────────────┬────────────────┘
-               │
-      ┌────────┼────────┐
-      │        │        │
-      ▼        ▼        ▼
- [ IDENTITY ] [ POLICY ] [ ECONOMY ]
-      │        │        │
-      └────────┼────────┘
-               │ 
-               ▼
-       [ SIMULATION LAYER ]
-               │
-      ┌────────┴────────┐
-      │                 │
-      ▼                 ▼
- [ PERMITTED ]     [ BLOCKED ]
- (Action runs)    (Process dies)
-```
-
-1.  **Identity Registry**: Verifies that the agent is registered and has the mandatory tokens.
-2.  **Logical Enforcement**: Checks the `action_type` against the `actionable_logic` policy repository.
-3.  **Economic Autonomy**: Confirms the action doesn't violate the agent's specific P&L or budget limits.
-4.  **Shadow Simulation**: Models the "Post-Action" state. If it causes a risk spike, the Gateway returns `BLOCKED`.
-
----
-
-## 🛠️ Advanced Operations
-
-### Monitoring Stack Operations
-Access the command center for real-time visibility into the "Machine Economy."
-*   **Prometheus**: Raw metric storage and scraping (`localhost:9090`).
-*   **Grafana**: Pre-built dashboards for Risk Pressure, Block Rates, and Latency (`localhost:3000`).
-*   **Node Exporter**: Hardware health metrics for the host running the agents.
-*   Details: [OPERATIONS.md](file:///c:/Users/galan/agent-infra-monorepo/OPERATIONS.md)
-
-### Remote Gateway Setup
-Deploy the Gateway on a performant Linux server while keeping your SDK clients on macOS/Windows.
-*   Connect over **Tailscale Serve/Funnel** for secure, password-less internal access.
-*   Use **SSH Tunnels** for direct point-to-point command execution.
-*   Details: [REMOTE_SETUP.md]() (Coming Soon)
-
-### Stress Testing the "Hands"
-Run the Chaos Agent series to verify your safety thresholds.
+### 3. Launch the Monitoring Stack
+Start the real-time dashboard to see exactly what your agents are doing.
 ```bash
-python test_chaos.py --agents 10 --violation-target economic
+docker-compose -f docker-compose.monitoring.yml up -d
 ```
-This spawns 10 agents that intentionally try to break budgets, verifying that the 11th agent is blocked by the **Cumulative Risk** engine.
+Access the dashboard at `http://localhost:3000` (User: `admin`, Pass: `admin`).
 
 ---
 
-## 🛡️ Security Model
-*   **Default Deny**: All actions are blocked unless explicitly permitted by a policy in the `actionable_logic` layer.
-*   **Isolations**: Group and external-agent sessions run inside per-session Docker sandboxes.
-*   **Correlation IDs**: Every request is assigned a `correlationId` that follows the action through logs, simulation, and the eventual decision audit.
+## Everything Built So Far
+
+The platform is divided into specialized packages that handle different parts of the safety process.
+
+### Core Systems
+*   **autonomy_core**: The main engine that coordinates all safety modules.
+*   **autonomy_sdk**: The library you use in your Python scripts to connect to the Gateway.
+*   **gateway_service**: A FastAPI-based server that acts as a central firewall for multiple agents.
+*   **identity_system**: Keeps a registry of all agents and uses cryptographic keys to verify who is making each request.
+
+### Control and Enforcement
+*   **enforcement_layer**: A rules-engine that compares an agent's intended action against a list of "Allow" and "Deny" policies.
+*   **actionable_logic**: A parser that lets you write rules in plain text or JSON and turns them into code-level filters.
+*   **scorring_module**: Calculates a "Risk Score" (0 to 100) for every action based on how unusual it looks compared to normal behavior.
+
+### Testing and Forecasting
+*   **simulation_layer**: Creates a "shadow" copy of your system state to run an agent's command as a test-run before letting it happen for real.
+*   **entropy_stress_testing**: Checks if a group of agents working at the same time might cause a system-wide failure or large-scale risk spike.
+*   **main_dashboard**: A pre-built Grafana setup with panels for Risk Pressure, Block Rates, and System Health.
+
+### Money and Coordination
+*   **economic_autonomy**: A budgeting tool that sets hard limits on how much an agent can spend. It tracks P&L and stops all actions if a budget is exceeded.
+*   **a2a_coordination**: A set of protocols that allows agents to negotiate with each other, sign "digital contracts," and settle payments.
+*   **reputation_tracker**: Scores agents based on their success rate and how often they follow coordination rules.
+
+### Logistics and Teams
+*   **task_formation**: An optimizer that analyzes a task and picks the best combination of agents to solve it.
+*   **matching_engine**: Automatically routes incoming requests to the best available agent based on its skills and safety history.
+*   **synergy_forecaster**: Predicts how well a team of agents will work together before they are assigned to a real project.
 
 ---
 
-## 📄 Docs & Resources
-*   [Getting Started](file:///c:/Users/galan/agent-infra-monorepo/AUTONOMY_DOCS_VALID.md) — The technical implementation handbook.
-*   [Enforcement Guide](file:///c:/Users/galan/agent-infra-monorepo/ENFORCEMENT_GUIDE.md) — How to move from reporting to physically stopping actions.
-*   [Monitoring Docs](file:///c:/Users/galan/agent-infra-monorepo/MONITORING_DOCS_GUIDE.md) — Setting up the "Eyes" of the system.
-*   [MCP Guard Server](file:///c:/Users/galan/agent-infra-monorepo/MCP_DOCUMENTATION_GUIDE.md) — Using the Gateway as a set of tools for AI models.
-*   [Roadmap: The Hands](file:///c:/Users/galan/agent-infra-monorepo/prompts_to_build_the_hands.md) — Future integration prompts for production expansion.
+## How it Works: The Security Loop
+
+When an agent wants to perform an action, the Gateway runs a four-step check in under 500 milliseconds:
+
+1.  **Identity Check**: "Is this a registered agent we recognize?"
+2.  **Policy Check**: "Is this specific action (e.g., 'delete_user') allowed by the rules?"
+3.  **Money Check**: "Does this agent have enough remaining budget to pay for this?"
+4.  **Test Run (Simulation)**: "If we do this in the test environment, does anything break?"
+
+If any of these checks fail, the Gateway returns a **BLOCKED** status and the code stops immediately.
 
 ---
 
-## 🤝 Contributing
-See `CONTRIBUTING.md` for guidelines. We value safety-first contributions and stress-test PRs.
+## Advanced Operations
+
+### Stress Testing (Chaos Agents)
+You can test the system's "Brakes" by running a simulation of multiple agents trying to break the rules at once:
+```bash
+python test_chaos.py
+```
+This script spawns 10 agents that intentionally attempt to overspend. The Gateway should successfully block them once the cumulative risk threshold is hit.
+
+### Remote Access (Tailscale)
+The Gateway can be configured to use **Tailscale** for secure remote access. This allows your agents to run on a central server while you monitor them from your laptop securely over an encrypted tunnel.
+
+### MCP Integration
+Use the **autonomy-guard-server** (apps/mcp_server) to add these safety features to AI assistants like Claude. It exposes the Gateway's checks as a tool that the AI can use to self-verify its actions.
 
 ---
 
-**Built by the Autonomy Infrastructure Team and the community.**
-Establishing a new benchmark for reliable AI execution.
+## Security Model
+*   **Default-Deny**: The system blocks every action by default. You must explicitly write a policy to allow something.
+*   **Docker Sandboxing**: When running in a multi-user environment, the Gateway can run agent code inside temporary Docker containers to prevent it from accessing your local files.
+*   **Correlation IDs**: Every action is assigned a unique tracking ID so you can trace a "Blocked" decision back through the logs to see exactly why it was stopped.
